@@ -1,0 +1,22 @@
+{
+    "name": "elkbullwinkle/xero-laravel",
+    "description": "Xero integration package for Laravel",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Aleksandr Baishev",
+            "email": "elkbullwinkle@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "guzzlehttp/oauth-subscriber": "^0.3.0"
+    },
+
+    "autoload":  {
+        "psr-4": {
+            "Elkbullwinkle\\XeroLaravel\\": "src/"
+        }
+    }
+}
