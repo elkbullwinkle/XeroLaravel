@@ -1,7 +1,6 @@
 {
     "name": "elkbullwinkle/xero-laravel",
     "description": "Xero integration package for Laravel",
-    "type": "library",
     "license": "MIT",
     "authors": [
         {
