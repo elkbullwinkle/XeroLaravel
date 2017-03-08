@@ -10,9 +10,12 @@ namespace Elkbullwinkle\XeroLaravel\Transport;
 
 use Elkbullwinkle\XeroLaravel\Exceptions\SignatureTypeNotAllowedException;
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Subscriber\Oauth\Oauth1;
+use GuzzleHttp\Psr7\Response;
+use Exception;
 
 class Guzzle extends Transport
 {
@@ -26,9 +29,15 @@ class Guzzle extends Transport
 
     protected $stack = null;
 
-    public function __construct()
+    public function __construct($config = [], $headers = [], $init = false)
     {
+        $this->setConfig($config);
+        $this->setHeaders($headers);
 
+        if ($init)
+        {
+            $this->init();
+        }
     }
 
     public function init($signature_type = null)
@@ -69,20 +78,55 @@ class Guzzle extends Transport
     {
 
         try {
-            return $this->client->request(strtoupper($method), $url, ['headers' => $this->headers]);
+
+            $response = $this->client->request(strtoupper($method), $url, ['headers' => $this->headers]);
+
+
+            return $this->processResponse($response);
+
+            echo \GuzzleHttp\Psr7\str($response);
+            var_dump($response);
+
+            return (string)$response->getBody();
+
+        } catch (ClientException $e)
+        {
+
+            return $this->processResponseException($e);
+
         } catch (RequestException $e)
         {
-            //var_dump($e->getRequest());
-            dd($e);
 
-            if ($e->hasResponse())
-            {
-                //var_dump($e->getResponse());
-            }
+            return $this->processResponseException($e);
+
         }
 
+    }
+
+    protected function processResponseException(Exception $e)
+    {
+
+        $response = $e->hasResponse() ? $e->getResponse() : null;
+
+        return [
+            'status' => false,
+            'code' => $response ? $response->getStatusCode() : null,
+            'headers' => $response ? $response->getHeaders() : null,
+            'body' => $response ? (string)$response->getBody() : null,
+            'full-response' => $response ? \GuzzleHttp\Psr7\str($response) : null,
+        ];
+    }
 
 
+    protected function processResponse(Response $response)
+    {
+        return [
+            'status' => true,
+            'code' => $response->getStatusCode(),
+            'headers' => $response->getHeaders(),
+            'body' => json_decode((string)$response->getBody(), true),
+            'full-response' => \GuzzleHttp\Psr7\str($response),
+        ];
     }
 
 
@@ -104,6 +148,7 @@ class Guzzle extends Transport
 
     protected function signTwoLegged()
     {
+
         $this->oauth = new Oauth1($this->config);
 
         return $this;

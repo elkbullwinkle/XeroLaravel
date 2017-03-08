@@ -88,6 +88,7 @@ abstract class Transport {
     final public function setConsumerSecret($secret)
     {
         $this->config['consumer_secret'] = $secret;
+        $this->config['token_secret'] = $secret;
 
         return $this;
     }
