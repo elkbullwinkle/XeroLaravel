@@ -3,52 +3,26 @@
 namespace Elkbullwinkle\XeroLaravel\Models\Traits;
 
 use Carbon\Carbon;
+use Elkbullwinkle\XeroLaravel\Models\QueryBuilder;
 use Elkbullwinkle\XeroLaravel\Models\XeroModel;
 use Illuminate\Support\Collection;
+use Mockery\Matcher\Closure;
 
 trait FluentQueries {
 
-    //Query variable
+    //Builder variable
+
+    protected $builder;
 
     /**
-     * Variable that contains query
+     * Return query builder instance
      *
-     * @var array
+     * @return QueryBuilder|null
      */
-    protected $query = [];
-
-
-    //What we need is to describe
-
-
-    //Where function
-
-    protected function where()
+    public function getBuilderInstance()
     {
-
-
-        return $this;
+        return $this->builder;
     }
-
-
-    //Or where function
-
-    protected function orWhere()
-    {
-
-
-        return $this;
-    }
-
-    //Page function
-
-    protected function retrievePage()
-    {
-
-
-        return $this;
-    }
-
 
     //Function to build final query from array to recursively process query array
 
@@ -63,6 +37,24 @@ trait FluentQueries {
 
     public function __callStatic($name, $arguments)
     {
+        if ($name == 'getAllModelAttributes')
+        {
+            $model = new static;
+            return $model->getAllModelAttributes();
+        }
+
+        if ($name == 'getModelAttribute')
+        {
+            $model = new static;
+            return $model->getModelAttribute($arguments[0]);
+        }
+
+        if ($name == 'isModelAttributeChildClass')
+        {
+            $model = new static;
+            return $model->isModelAttributeChildClass(...$arguments);
+        }
+
         // TODO: Implement __callStatic() method.
     }
 

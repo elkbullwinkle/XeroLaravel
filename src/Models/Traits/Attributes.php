@@ -118,6 +118,38 @@ trait Attributes {
     }
 
     /**
+     * Check is a model attribute a class and whether it is a collection
+     *
+     * if $collectable = null returns true if the attribute is a class or collection
+     * if $collectable = true returns true if the attribute is a collection
+     * if $collectable = false return true if the attribute is a class
+     *
+     * @param $attributeName
+     * @param bool|null $collectable Should child attribute be a collection
+     * @return boolean|null
+     */
+    public function isModelAttributeChildClass($attributeName, $collectable = null)
+    {
+        if (is_null($attribute = $this->getModelAttribute($attributeName)))
+        {
+            return null;
+        }
+
+        if (is_a($attribute['type'], XeroModel::class, true))
+        {
+            if (is_null($collectable))
+            {
+                return true;
+            }
+
+            return ($collectable && $this->isModelAttributeCollectable($attributeName)) ||
+                (!$collectable && !$this->isModelAttributeCollectable($attributeName));
+        }
+
+        return false;
+    }
+
+    /**
      * Return model attribute type by given name
      *
      * @param string $attributeName Attribute name

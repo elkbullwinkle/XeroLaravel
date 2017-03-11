@@ -11,6 +11,7 @@ namespace Elkbullwinkle\XeroLaravel\Models;
 use Carbon\Carbon;
 use Elkbullwinkle\XeroLaravel\Exceptions\AttributeValidationException;
 use Elkbullwinkle\XeroLaravel\Models\Traits\Attributes;
+use Elkbullwinkle\XeroLaravel\Models\Traits\FluentQueries;
 use Elkbullwinkle\XeroLaravel\Models\Traits\ToArray;
 use Elkbullwinkle\XeroLaravel\Models\Traits\ToXml;
 use Elkbullwinkle\XeroLaravel\XeroLaravel;
@@ -21,7 +22,7 @@ use DOMDocument;
 
 abstract class XeroModel extends Fluent implements Arrayable
 {
-    use ToArray, ToXml, Attributes;
+    use ToArray, ToXml, Attributes, FluentQueries;
 
     protected $pageable = false;
 
