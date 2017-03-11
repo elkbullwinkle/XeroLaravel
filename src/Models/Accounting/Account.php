@@ -13,99 +13,132 @@ use Elkbullwinkle\XeroLaravel\Models\XeroModel;
 
 class Account extends XeroModel
 {
+    /**
+     * Is collection pageable
+     *
+     * @var bool
+     */
     protected $pageable = false;
 
+    /**
+     * Model category, probably can be figured out using namespaces
+     *
+     * @var string
+     */
     protected $cat = 'accounting';
 
+    /**
+     * Model Xero Api Endpoint
+     *
+     * @var string
+     */
     protected $endpoint = 'Accounts';
 
+    /**
+     * Model UUID like "Primary key"
+     *
+     * @var string
+     */
     protected $id = 'AccountID';
 
-    protected $required = [
-        'Code',
-        'Name',
-        'Type',
-    ];
-
-    protected $attrs = [
+    /**
+     * Describe model attributes
+     *
+     * Every element contains either an array or type of the attribute
+     * By default all attributes are requested from the API, but only the ones which have
+     * ['post'] option will be sent to server
+     *
+     * ['required'] - needed for model validation will indicate that the attribute is required to POST\PUT the model
+     *
+     * ['type'] - attribute type
+     *
+     * Available types:
+     *
+     *  guid - model uuid, primary key
+     *  string - string type
+     *  float - float type
+     *  int - integer type
+     *  boolean - boolean type
+     *  array - array type //TODO remove the array type at all, add models for all possible scenarios to replace array type
+     *  date - string date, converted to carbon instance
+     *  net-date - .NET date serialization present in JSON responses from API, converted to Carbon instance
+     *  XeroModel descendant - if the attribute is another model, class name should be used as type
+     *
+     * ['collection, collectable'] - applicable to XeroModel descendant attributes, if API returns the attribute as a collection of models
+     *
+     * @var array
+     */
+    protected $modelAttributes = [
 
         'Code' => [
             'type' => 'string',
             'post',
-            'put'
+            'required'
         ],
 
         'Name' => [
             'type' => 'string',
             'post',
-            'put'
+            'required'
         ],
 
         'Type' => [
             'type' => 'string',
             'post',
-            'put'
+            'required'
         ],
 
         'BankAccountNumber' => [
             'type' => 'string',
             'post',
-            'put'
         ],
 
         'Status' => [
             'type' => 'string',
             'post',
-            'put'
         ],
 
         'Description' => [
             'type' => 'string',
             'post',
-            'put'
         ],
 
         'BankAccountType' => [
             'type' => 'string',
             'post',
-            'put'
         ],
 
         'CurrencyCode' => [
             'type' => 'string',
             'post',
-            'put'
         ],
 
         'TaxType' => [
             'type' => 'string',
             'post',
-            'put'
         ],
 
         'EnablePaymentsToAccount' => [
             'type' => 'boolean',
             'post',
-            'put'
         ],
 
         'ShowInExpenseClaims' => [
             'type' => 'boolean',
             'post',
-            'put'
         ],
 
         //Read only retrieved on GET requests
 
         'AccountID' => 'guid',
 
-        'Class' => 'net-date',
+        'Class' => 'string',
 
-        'SystemAccount' => 'float',
+        'SystemAccount' => 'string',
 
         'ReportingCode' => 'string',
 
-        'ReportingCodeName' => 'int',
+        'ReportingCodeName' => 'string',
 
         'HasAttachments' => 'boolean',
 

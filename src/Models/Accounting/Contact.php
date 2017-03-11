@@ -13,135 +13,156 @@ use Elkbullwinkle\XeroLaravel\Models\XeroModel;
 
 class Contact extends XeroModel
 {
-    protected $pageable = false;
+    /**
+     * Is collection pageable
+     *
+     * @var bool
+     */
+    protected $pageable = true;
 
+    /**
+     * Model category, probably can be figured out using namespaces
+     *
+     * @var string
+     */
     protected $cat = 'accounting';
 
+    /**
+     * Model Xero Api Endpoint
+     *
+     * @var string
+     */
     protected $endpoint = 'Contacts';
 
+    /**
+     * Model UUID like "Primary key"
+     *
+     * @var string
+     */
     protected $id = 'ContactID';
 
-    protected $required = [
-        'Name',
-    ];
-
-    protected $collections = [
-        'ContactPersons',
-        'Addresses',
-        'Phones',
-        'SalesTrackingCategories',
-        'PurchasesTrackingCategories',
-    ];
-
-    protected $attrs = [
+    /**
+     * Describe model attributes
+     *
+     * Every element contains either an array or type of the attribute
+     * By default all attributes are requested from the API, but only the ones which have
+     * ['post'] option will be sent to server
+     *
+     * ['required'] - needed for model validation will indicate that the attribute is required to POST\PUT the model
+     *
+     * ['type'] - attribute type
+     *
+     * Available types:
+     *
+     *  guid - model uuid, primary key
+     *  string - string type
+     *  float - float type
+     *  int - integer type
+     *  boolean - boolean type
+     *  array - array type //TODO remove the array type at all, add models for all possible scenarios to replace array type
+     *  date - string date, converted to carbon instance
+     *  net-date - .NET date serialization present in JSON responses from API, converted to Carbon instance
+     *  XeroModel descendant - if the attribute is another model, class name should be used as type
+     *
+     * ['collection, collectable'] - applicable to XeroModel descendant attributes, if API returns the attribute as a collection of models
+     *
+     * @var array
+     */
+    protected $modelAttributes = [
         'ContactID' => 'guid',
 
         'ContactNumber' => [
             'type' => 'string',
             'post',
-            'put',
         ],
 
         'AccountNumber' => [
             'type' => 'string',
             'post',
-            'put',
         ],
 
         'ContactStatus' => [
             'type' => 'string',
             'post',
-            'put',
         ],
 
         'Name' => [
             'type' => 'string',
             'post',
-            'put',
+            'required'
         ],
 
         'FirstName' => [
             'type' => 'string',
             'post',
-            'put',
         ],
 
         'LastName' => [
             'type' => 'string',
             'post',
-            'put',
         ],
 
         'EmailAddress' => [
             'type' => 'string',
             'post',
-            'put',
         ],
 
         'SkypeUserName' => [
             'type' => 'string',
             'post',
-            'put',
         ],
 
         'ContactPersons' => [
             'type' => ContactPerson::class,
             'post',
-            'put',
+            'collection'
         ],
 
         'BankAccountDetails' => [
             'type' => 'string',
             'post',
-            'put',
         ],
 
         'TaxNumber' => [
             'type' => 'string',
             'post',
-            'put',
         ],
 
         'AccountsReceivableTaxType' => [
             'type' => 'string',
             'post',
-            'put',
         ],
 
         'AccountsPayableTaxType' => [
             'type' => 'string',
             'post',
-            'put',
         ],
 
         'Addresses' => [
             'type' => Address::class,
             'post',
-            'put',
+            'collection'
         ],
 
         'Phones' => [
             'type' => Phone::class,
             'post',
-            'put',
+            'collection'
         ],
 
         'IsSupplier' => [
-            'type' => 'string',
+            'type' => 'boolean',
             'post',
-            'put',
         ],
 
         'IsCustomer' => [
-            'type' => 'string',
+            'type' => 'boolean',
             'post',
-            'put',
         ],
 
         'DefaultCurrency' => [
             'type' => 'string',
             'post',
-            'put',
         ],
 
         //Specific
@@ -150,49 +171,43 @@ class Contact extends XeroModel
         'XeroNetworkKey' => [
             'type' => 'string',
             'post',
-            'put',
         ],
 
         'SalesDefaultAccountCode' => [
-            'type' => Account::class,
+            'type' => 'string',
             'post',
-            'put',
         ],
 
         'PurchasesDefaultAccountCode' => [
-            'type' => Account::class,
+            'type' => 'string',
             'post',
-            'put',
         ],
 
         'SalesTrackingCategories' => [
             'type' => TrackingCategory::class,
             'post',
-            'put',
+            'collection'
         ],
 
         'PurchasesTrackingCategories' => [
-            'type' => TrackingCategory::class,
+            'type' => ElementTracking::class,
             'post',
-            'put',
+            'collection'
         ],
 
         'TrackingCategoryName' => [
             'type' => 'string',
             'post',
-            'put',
         ],
 
         'TrackingCategoryOption' => [
             'type' => 'string',
             'post',
-            'put',
         ],
 
         'PaymentTerms' => [
             'type' => 'string',
             'post',
-            'put',
         ],
 
         //GET Only

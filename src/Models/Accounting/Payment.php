@@ -21,13 +21,7 @@ class Payment extends XeroModel
 
     protected $id = 'PaymentID';
 
-    protected $required = [
-        'Date',
-        'Amount',
-        'InvoiceID',
-    ];
-
-    protected $attrs = [
+    protected $modelAttributes = [
         'PaymentID' => 'guid',
         'Date' => 'net-date',
         'Amount' => 'float',

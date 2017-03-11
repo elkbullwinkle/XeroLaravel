@@ -11,14 +11,14 @@ namespace Elkbullwinkle\XeroLaravel\Models\Accounting;
 
 use Elkbullwinkle\XeroLaravel\Models\XeroModel;
 
-class CreditNote extends XeroModel
+class BankTransaction extends XeroModel
 {
     /**
      * Is collection pageable
      *
      * @var bool
      */
-    protected $pageable = false;
+    protected $pageable = true;
 
     /**
      * Model category, probably can be figured out using namespaces
@@ -32,14 +32,14 @@ class CreditNote extends XeroModel
      *
      * @var string
      */
-    protected $endpoint = 'CreditNotes';
+    protected $endpoint = 'BankTransactions';
 
     /**
      * Model UUID like "Primary key"
      *
      * @var string
      */
-    protected $id = 'CreditNoteID';
+    protected $id = 'BankTransactionID';
 
     /**
      * Describe model attributes
@@ -72,11 +72,11 @@ class CreditNote extends XeroModel
 
         //GUID resource ID
 
-        'CreditNoteID' => [
+        'BankTransactionID' => [
             'type' => 'guid',
         ],
 
-        //Required to POST a draft Invoice
+        //Required to POST a bank transaction
 
         'Type' => [
             'type' => 'string',
@@ -90,13 +90,47 @@ class CreditNote extends XeroModel
             'required',
         ],
 
+        'LineItems' => [
+            'type' => LineItem::class,
+            'post',
+            'collection'
+        ],
+
+        'BankAccount' => [
+            'type' => Account::class,
+            'post',
+        ],
+
         //Recommended for POST/PUT requests
 
-        //'DateString' => 'date', //We don't have to use it since .Net date is parsed anyway
+        'IsReconciled' => [
+            'type' =>'boolean',
+            'post',
+        ],
 
         'Date' => [
             'type' => 'net-date',
             'post',
+        ],
+
+        'Reference' => [
+            'type' => 'string',
+            'post',
+        ],
+
+        'CurrencyCode' => [
+            'type' => 'string',
+            'post',
+        ],
+
+        'CurrencyRate' => [
+            'type' => 'float',
+            'post',
+        ],
+
+        'Url' => [
+            'type' => 'string',
+            'post'
         ],
 
         'Status' => [
@@ -109,62 +143,25 @@ class CreditNote extends XeroModel
             'post',
         ],
 
-        'LineItems' => [
-            'type' => LineItem::class,
-            'post',
-            'collection'
-        ],
-
-        'SubTotal' => 'float',
-
-        'TotalTax' => 'float',
-
-        'Total' => 'float',
-
-        'CurrencyCode' => [
-            'type' => 'string',
-            'post',
-        ],
-
-        'FullyPaidOnDate' => 'net-date',
-
-        //Optional for PUT/POST requests
-
-        'CreditNoteNumber' => [
-            'type' => 'string',
-            'post',
-        ],
-
-        'Reference' => [
-            'type' => 'string',
-            'post',
-            'if' => [
-                'attribute' => 'Type',
-                'value' => 'ACCRECCREDIT'
-            ],
-        ],
-
-        'SentToContact' => [
-            'type' => 'boolean',
-        ],
-
-        'CurrencyRate' => [
+        'SubTotal' => [
             'type' => 'float',
             'post',
         ],
 
-        'RemainingCredit' => 'float',
-
-        'Allocations' => [
-            'type' => Allocation::class,
-            'post',
-            'collection'
-        ],
-
-        'BrandingThemeID' => [
-            'type' => 'string',
+        'TotalTax' => [
+            'type' => 'float',
             'post',
         ],
+
+        'Total' => [
+            'type' => 'float',
+            'post',
+        ],
+
+        'PrepaymentID' => 'string',
+
+        'OverpaymentID' => 'string',
+
 
     ];
 }

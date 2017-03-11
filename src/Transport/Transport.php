@@ -5,7 +5,6 @@ namespace Elkbullwinkle\XeroLaravel\Transport;
 abstract class Transport {
 
     /**
-     *
      * Configuration
      *
      * @var array
@@ -15,6 +14,8 @@ abstract class Transport {
 
 
     protected $headers = [];
+
+    protected $lastError = [];
 
     /**
      *

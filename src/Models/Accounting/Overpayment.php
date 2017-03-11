@@ -13,22 +13,61 @@ use Elkbullwinkle\XeroLaravel\Models\XeroModel;
 
 class Overpayment extends XeroModel
 {
+    /**
+     * Is collection pageable
+     *
+     * @var bool
+     */
     protected $pageable = true;
 
+    /**
+     * Model category, probably can be figured out using namespaces
+     *
+     * @var string
+     */
     protected $cat = 'accounting';
 
+    /** Model Xero Api Endpoint
+     *
+     * @var string
+     */
     protected $endpoint = 'Overpayments';
 
+    /**
+     * Model UUID like "Primary key"
+     *
+     * @var string
+     */
     protected $id = 'OverpaymentID';
 
-    protected $required = [
-    ];
-
-    protected $collections = [
-        'LineItems',
-    ];
-
-    protected $attrs = [
+    /**
+     * Describe model attributes
+     *
+     * Every element contains either an array or type of the attribute
+     * By default all attributes are requested from the API, but only the ones which have
+     * ['post'] option will be sent to server
+     *
+     * ['required'] - needed for model validation will indicate that the attribute is required to POST\PUT the model
+     *
+     * ['type'] - attribute type
+     *
+     * Available types:
+     *
+     *  guid - model uuid, primary key
+     *  string - string type
+     *  float - float type
+     *  int - integer type
+     *  boolean - boolean type
+     *  array - array type //TODO remove the array type at all, add models for all possible scenarios to replace array type
+     *  date - string date, converted to carbon instance
+     *  net-date - .NET date serialization present in JSON responses from API, converted to Carbon instance
+     *  XeroModel descendant - if the attribute is another model, class name should be used as type
+     *
+     * ['collection, collectable'] - applicable to XeroModel descendant attributes, if API returns the attribute as a collection of models
+     *
+     * @var array
+     */
+    protected $modelAttributes = [
 
         //GUID resource ID
 
@@ -41,14 +80,12 @@ class Overpayment extends XeroModel
         'Type' => [
             'type' => 'string',
             'post',
-            'put',
             'required',
         ],
 
         'Contact' => [
             'type' => Contact::class,
             'post',
-            'put',
             'required',
         ],
 
@@ -59,26 +96,23 @@ class Overpayment extends XeroModel
         'Date' => [
             'type' => 'net-date',
             'post',
-            'put',
         ],
 
         'Status' => [
             'type' => 'string',
             'post',
-            'put',
         ],
 
         'LineAmountTypes' => [
             'type' => 'string',
             'post',
-            'put',
         ],
 
         'LineItems' => [
             'type' => LineItem::class,
             'post',
-            'put',
             'required',
+            'collection'
         ],
 
         'SubTotal' => 'float',
@@ -90,26 +124,24 @@ class Overpayment extends XeroModel
         'CurrencyCode' => [
             'type' => 'string',
             'post',
-            'put',
         ],
 
         'CurrencyRate' => [
             'type' => 'float',
             'post',
-            'put'
         ],
 
         'RemainingCredit' => 'float',
 
-        /*'Allocations' => [
-            'type' => '',
-        ],*/
+        'Allocations' => [
+            'type' => Allocation::class,
+            'collection'
+        ],
 
         'Payments' => [
-            'type' => Payment::class,
+            'type' => InvoicePayment::class,
+            'collection'
         ],
-        
-        'HasAttachments' => 'boolean',
 
     ];
 }

@@ -13,21 +13,62 @@ use Elkbullwinkle\XeroLaravel\Models\XeroModel;
 
 class Invoice extends XeroModel
 {
-    protected $pageable = false;
+    /**
+     * Is collection pageable
+     *
+     * @var bool
+     */
+    protected $pageable = true;
 
+    /**
+     * Model category, probably can be figured out using namespaces
+     *
+     * @var string
+     */
     protected $cat = 'accounting';
 
+    /**
+     * Model Xero Api Endpoint
+     *
+     * @var string
+     */
     protected $endpoint = 'Invoices';
 
+    /**
+     * Model UUID like "Primary key"
+     *
+     * @var string
+     */
     protected $id = 'InvoiceID';
 
-    protected $required = [
-        'Type',
-        'Contact',
-        'LineItems',
-    ];
-
-    protected $attrs = [
+    /**
+     * Describe model attributes
+     *
+     * Every element contains either an array or type of the attribute
+     * By default all attributes are requested from the API, but only the ones which have
+     * ['post'] option will be sent to server
+     *
+     * ['required'] - needed for model validation will indicate that the attribute is required to POST\PUT the model
+     *
+     * ['type'] - attribute type
+     *
+     * Available types:
+     *
+     *  guid - model uuid, primary key
+     *  string - string type
+     *  float - float type
+     *  int - integer type
+     *  boolean - boolean type
+     *  array - array type //TODO remove the array type at all, add models for all possible scenarios to replace array type
+     *  date - string date, converted to carbon instance
+     *  net-date - .NET date serialization present in JSON responses from API, converted to Carbon instance
+     *  XeroModel descendant - if the attribute is another model, class name should be used as type
+     *
+     * ['collection, collectable'] - applicable to XeroModel descendant attributes, if API returns the attribute as a collection of models
+     *
+     * @var array
+     */
+    protected $modelAttributes = [
 
         //GUID resource ID
 
@@ -40,22 +81,20 @@ class Invoice extends XeroModel
         'Type' => [
             'type' => 'string',
             'post',
-            'put',
             'required',
         ],
 
         'Contact' => [
             'type' => Contact::class,
             'post',
-            'put',
             'required',
         ],
 
         'LineItems' => [
             'type' => LineItem::class,
             'post',
-            'put',
             'required',
+            'collection'
         ],
 
         //Recommended for POST/PUT requests
@@ -65,7 +104,6 @@ class Invoice extends XeroModel
         'Date' => [
             'type' => 'net-date',
             'post',
-            'put',
         ],
 
         //'DueDateString' => 'date', //We don't have to use it since .Net date is parsed anyway
@@ -73,14 +111,11 @@ class Invoice extends XeroModel
         'DueDate' => [
             'type' => 'net-date',
             'post',
-            'put',
         ],
-
 
         'LineAmountTypes' => [
             'type' => 'string',
             'post',
-            'put',
         ],
 
         //Optional for PUT/POST requests
@@ -88,61 +123,51 @@ class Invoice extends XeroModel
         'InvoiceNumber' => [
             'type' => 'string',
             'post',
-            'put',
         ],
 
         'Reference' => [
             'type' => 'string',
             'post',
-            'put',
         ],
 
         'BrandingThemeID' => [
             'type' => 'string',
             'post',
-            'put',
         ],
 
         'Url' => [
             'type' => 'string',
             'post',
-            'put',
         ],
 
         'CurrencyCode' => [
             'type' => 'string',
             'post',
-            'put',
         ],
 
         'CurrencyRate' => [
             'type' => 'float',
             'post',
-            'put'
         ],
 
         'Status' => [
             'type' => 'string',
             'post',
-            'put',
         ],
 
         'SentToContact' => [
             'type' => 'boolean',
             'post',
-            'put',
         ],
 
         'ExpectedPaymentDate' => [
             'type' => 'boolean',
             'post',
-            'put',
         ],
 
         'PlannedPaymentDate' => [
             'type' => 'boolean',
             'post',
-            'put',
         ],
 
         //Items returned on GET requests
@@ -159,33 +184,34 @@ class Invoice extends XeroModel
 
         'HasAttachments' => 'boolean',
 
-        'Payments' => Payment::class,
-
-        'Prepayments' => Prepayment::class, //Prepayments
-
-        'Overpayments' => Overpayment::class, //Overpayments
-
-        'AmountDue' => [
-            'type' => 'float',
+        'Payments' => [
+            'type' => InvoicePayment::class,
+            'collection'
         ],
 
-        'AmountPaid' => [
-            'type' => 'float',
+        'Prepayments' => [
+            'type' => Prepayment::class,
+            'collection'
         ],
+
+        'Overpayments' => [
+            'type' => Overpayment::class,
+            'collection'
+        ],
+
+        'AmountDue' => 'float',
+
+        'AmountPaid' => 'float',
 
         'FullyPaidOnDate' => 'net-date',
 
         'AmountCredited' => 'float',
 
-        'CreditNotes' => CreditNote::class, //Credit notes
+        'CreditNotes' => [
+            'type' => CreditNote::class,
+            'collection'
+        ]
 
     ];
 
-    protected $collections = [
-        'Payments',
-        'Prepayments',
-        'Overpayments',
-        'CreditNotes',
-        'LineItems',
-    ];
 }

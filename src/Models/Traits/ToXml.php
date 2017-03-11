@@ -12,25 +12,23 @@ trait ToXml {
     /**
      * Build an XML document
      *
-     * @param string $method Method used to submit the form
+     * @param string $action Either creating or updating the model
      * @param SimpleXMLElement|null $parent Parent node to build complex nested structures
      * @param boolean $wrap Wrap root element with plural endpoint tag
      * @return string
      */
-    protected function toXml($method = 'post', SimpleXMLElement &$parent = null, $wrap = false)
+    protected function toXml($action = 'update', SimpleXMLElement &$parent = null, $wrap = false)
     {
 
         //Generating root element
 
         $singularEndpoint = str_singular($this->endpoint);
 
-        //var_dump("<${singularEndpoint}/>");
+        //var_dump(['Converting =>' => $this->attributes]);
 
         if (!is_null($parent))
         {
-
             $rootXml = $parent;
-
         }
         else
         {
@@ -50,7 +48,7 @@ trait ToXml {
         foreach ($this->attributes as $name => $attribute)
         {
 
-            if(!$this->attributeNeedsSubmitting($name))
+            if(!$this->getModelAttributeNeedsPosting($name, strtolower($action) == 'update'))
             {
                 continue;
             }
@@ -60,7 +58,7 @@ trait ToXml {
 
                 $childXml = $rootXml->addChild(str_singular($name));
 
-                $attribute->toXml($method, $childXml);
+                $attribute->toXml($action, $childXml);
 
             }
             elseif($attribute instanceof Carbon)
@@ -74,21 +72,21 @@ trait ToXml {
 
                 $collection = $rootXml->addChild($name);
 
-                $attribute->map(function($item) use ($collection, $name, $method) {
+                $attribute->map(function($item) use ($collection, $name, $action) {
 
 
                     $childName = is_null($item->getOverriddenName()) ? str_singular($name) : $item->getOverriddenName();
 
                     $childXml = $collection->addChild($childName);
 
-                    $item->toXml($method, $childXml);
+                    $item->toXml($action, $childXml);
                 });
             }
             elseif(is_array($attribute))
             {
                 $collection = $rootXml->addChild($name);
 
-                foreach ($attribute as $sub)
+                foreach ($attribute as $subName => $sub)
                 {
                     if (is_array($sub))
                     {
@@ -96,57 +94,53 @@ trait ToXml {
                         continue;
                     }
 
-                    $collection->addChild(str_singular($name), $sub);
+                    $collection->addChild($subName, htmlspecialchars($sub));
+
                 }
 
             }
             else
             {
-                $rootXml->addChild($name, $attribute);
+                //Checking for boolean value to manually pass
+
+                if ($this->getModelAttributeType($name) == 'boolean')
+                {
+                    $rootXml->addChild($name, $attribute ? 'true' : 'false');
+                }
+                else
+                {
+                    if ($this->getModelAttributeType($name) == 'string')
+                    {
+                        $rootXml->addChild($name, htmlspecialchars($attribute));
+                    }
+                    else
+                    {
+                        $rootXml->addChild($name, $attribute);
+                    }
+                }
+
             }
         }
 
         return $wrap ? $_rootXml->asXML() : $rootXml->asXML();
     }
 
-    protected function attributeNeedsSubmitting($name, $excludeGuid = true)
-    {
-        if (!(isset($this->attrs[$name]) && is_array($this->attrs[$name])))
-        {
-            if ($excludeGuid)
-            {
-                return isset($this->attrs[$name]) ? $this->attrs[$name] == 'guid' : false;
-            }
 
+    /**
+     * Determine if the attribute should be included to the server request
+     *
+     * @param string $attributeName Attribute name
+     * @param bool $postGuid Whether model UUID should be posted
+     * @return bool
+     */
+    protected function getModelAttributeNeedsPosting($attributeName, $postGuid = false)
+    {
+        if (is_null($attribute = $this->getModelAttribute($attributeName)))
+        {
             return false;
-
         }
 
-        if (in_array('put', $this->attrs[$name]) || in_array('post', $this->attrs[$name]) || ($excludeGuid && $this->attrs[$name]['type'] == 'guid'))
-        {
-            return true;
-        }
-
-        return false;
+        return in_array('post', $attribute) || ($postGuid && $attribute['type'] == 'guid');
     }
 
-    function append_simplexml(&$simplexml_to, &$simplexml_from)
-    {
-
-        if (!$simplexml_from instanceof SimpleXMLElement)
-        {
-            $simplexml_from = new SimpleXMLElement($simplexml_from);
-        }
-
-        foreach ($simplexml_from->children() as $simplexml_child)
-        {
-            $simplexml_temp = $simplexml_to->addChild($simplexml_child->getName(), (string) $simplexml_child);
-            foreach ($simplexml_child->attributes() as $attr_key => $attr_value)
-            {
-                $simplexml_temp->addAttribute($attr_key, $attr_value);
-            }
-
-            $this->append_simplexml($simplexml_temp, $simplexml_child);
-        }
-    }
 }

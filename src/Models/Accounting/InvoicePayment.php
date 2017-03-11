@@ -11,10 +11,30 @@ namespace Elkbullwinkle\XeroLaravel\Models\Accounting;
 
 use Elkbullwinkle\XeroLaravel\Models\XeroModel;
 
-class ContactPerson extends XeroModel
+class InvoicePayment extends XeroModel
 {
-
+    /**
+     * Determine whether it is only child model or can it be fetched directly from the API
+     *
+     * @var bool
+     */
     protected $fetchable = false;
+
+    /**
+     * Override default model name
+     * This is required for the sake of posting or updating parent model
+     * To fit the format of the XML required by Xero
+     *
+     * @var string
+     */
+    protected $overrideName = 'TrackingCategory';
+
+    /**
+     * Model UUID like "Primary key"
+     *
+     * @var string
+     */
+    protected $id = 'PaymentID';
 
     /**
      * Describe model attributes
@@ -44,28 +64,12 @@ class ContactPerson extends XeroModel
      * @var array
      */
     protected $modelAttributes = [
-
-        'FirstName' => [
-            'type' => 'string',
-            'post',
-            'required'
-        ],
-
-        'LastName' => [
-            'type' => 'string',
-            'post',
-            'required',
-        ],
-
-        'EmailAddress' => [
-            'type' => 'string',
-            'post',
-        ],
-
-        'IncludeInEmails' => [
-            'type' => 'boolean',
-            'post',
-        ],
-
+        'PaymentID' => 'guid',
+        'Date' => 'net-date',
+        'Amount' => 'float',
+        'Reference' => 'string',
+        'CurrencyRate' => 'float',
+        'HasAccount' => 'boolean',
+        'IsReconciled' => 'boolean',
     ];
 }

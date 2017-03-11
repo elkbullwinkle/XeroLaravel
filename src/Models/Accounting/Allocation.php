@@ -11,9 +11,13 @@ namespace Elkbullwinkle\XeroLaravel\Models\Accounting;
 
 use Elkbullwinkle\XeroLaravel\Models\XeroModel;
 
-class ContactPerson extends XeroModel
+class Allocation extends XeroModel
 {
-
+    /**
+     * Determine whether it is only child model or can it be fetched directly from the API
+     *
+     * @var bool
+     */
     protected $fetchable = false;
 
     /**
@@ -45,27 +49,19 @@ class ContactPerson extends XeroModel
      */
     protected $modelAttributes = [
 
-        'FirstName' => [
+        'Invoice' => [
+            'type' => Invoice::class,
+            'post',
+            'required'
+        ],
+
+        'AppliedAmount' => [
             'type' => 'string',
             'post',
             'required'
         ],
 
-        'LastName' => [
-            'type' => 'string',
-            'post',
-            'required',
-        ],
-
-        'EmailAddress' => [
-            'type' => 'string',
-            'post',
-        ],
-
-        'IncludeInEmails' => [
-            'type' => 'boolean',
-            'post',
-        ],
+        'Date' => 'net-date',
 
     ];
 }

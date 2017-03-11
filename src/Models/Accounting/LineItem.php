@@ -13,84 +13,99 @@ use Elkbullwinkle\XeroLaravel\Models\XeroModel;
 
 class LineItem extends XeroModel
 {
-    protected $pageable = false;
-
+    /**
+     * Determine whether it is only child model or can it be fetched directly from the API
+     *
+     * @var bool
+     */
     protected $fetchable = false;
 
-    protected $cat = 'accounting';
-
-    protected $endpoint = '';
-
+    /**
+     * Model UUID like "Primary key"
+     *
+     * @var string
+     */
     protected $id = 'LineItemID';
 
-    protected $required = [
-        'Description',
-    ];
-
-    protected $collections = [
-        'Tracking',
-    ];
-
-    protected $attrs = [
+    /**
+     * Describe model attributes
+     *
+     * Every element contains either an array or type of the attribute
+     * By default all attributes are requested from the API, but only the ones which have
+     * ['post'] option will be sent to server
+     *
+     * ['required'] - needed for model validation will indicate that the attribute is required to POST\PUT the model
+     *
+     * ['type'] - attribute type
+     *
+     * Available types:
+     *
+     *  guid - model uuid, primary key
+     *  string - string type
+     *  float - float type
+     *  int - integer type
+     *  boolean - boolean type
+     *  array - array type //TODO remove the array type at all, add models for all possible scenarios to replace array type
+     *  date - string date, converted to carbon instance
+     *  net-date - .NET date serialization present in JSON responses from API, converted to Carbon instance
+     *  XeroModel descendant - if the attribute is another model, class name should be used as type
+     *
+     * ['collection, collectable'] - applicable to XeroModel descendant attributes, if API returns the attribute as a collection of models
+     *
+     * @var array
+     */
+    protected $modelAttributes = [
         'LineItemID' => 'guid',
 
         'Description' => [
             'type' => 'string',
-            'put',
-            'post'
+            'post',
+            'required'
         ],
 
         'Quantity' => [
             'type' => 'float',
-            'put',
             'post'
         ],
 
         'UnitAmount' => [
             'type' => 'float',
-            'put',
             'post'
         ],
 
         'ItemCode' => [
             'type' => 'string',
-            'put',
             'post'
         ],
 
         'AccountCode' => [
             'type' => 'string',
-            'put',
             'post'
         ],
 
         'TaxType' => [
             'type' => 'string',
-            'put',
             'post'
         ],
 
         'TaxAmount' => [
             'type' => 'float',
-            'put',
             'post'
         ],
 
         'LineAmount' => [
             'type' => 'float',
-            'put',
             'post'
         ],
 
         'Tracking' => [
             'type' => ElementTracking::class,
-            'put',
-            'post'
+            'post',
+            'collection'
         ],
 
         'DiscountRate' => [
             'type' => 'float',
-            'put',
             'post'
         ],
 
