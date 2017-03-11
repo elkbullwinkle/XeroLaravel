@@ -10,6 +10,7 @@ namespace Elkbullwinkle\XeroLaravel\Models;
 
 use Carbon\Carbon;
 use Elkbullwinkle\XeroLaravel\Exceptions\AttributeValidationException;
+use Elkbullwinkle\XeroLaravel\Models\Traits\Attributes;
 use Elkbullwinkle\XeroLaravel\Models\Traits\ToArray;
 use Elkbullwinkle\XeroLaravel\Models\Traits\ToXml;
 use Elkbullwinkle\XeroLaravel\XeroLaravel;
@@ -20,7 +21,7 @@ use DOMDocument;
 
 abstract class XeroModel extends Fluent implements Arrayable
 {
-    use ToArray, ToXml;
+    use ToArray, ToXml, Attributes;
 
     protected $pageable = false;
 
@@ -37,30 +38,22 @@ abstract class XeroModel extends Fluent implements Arrayable
      */
     protected $connection;
 
-    protected $attributes;
+
 
     protected $guid = null;
 
     protected $cat = null;
 
-    protected $version = '2.0';
-
     protected $endpoint = '';
 
-    protected $modelAttributes = [];
 
-    protected $sharedAttributes = [
-        'UpdatedDateUTC' => 'net-date',
-        'HasErrors' => 'boolean',
-        'HasAttachments' => 'boolean',
-    ];
 
     public $lastError = [
         'code' => '',
         'error' => '',
     ];
 
-    protected $ignoredAttrs = [];
+
 
     public function __construct()
     {
@@ -73,21 +66,7 @@ abstract class XeroModel extends Fluent implements Arrayable
         return $this->lastError;
     }
 
-    public function __get($name)
-    {
 
-        //Add some special attributes if needed
-
-        if (isset($this->attributes[$name]))
-        {
-            return $this->attributes[$name];
-        }
-    }
-
-    public function __set($name, $value)
-    {
-
-    }
 
     /**
      * @return XeroLaravel
@@ -391,91 +370,7 @@ abstract class XeroModel extends Fluent implements Arrayable
         }
     }
 
-    /**
-     * Return model attribute if exists (always returns attribute as a complex type, e.g. in array form
-     *
-     * @param string $attributeName Attribute name
-     * @return null|array
-     */
-    public function getModelAttribute($attributeName)
-    {
 
-        if (!$this->modelAttributeExists($attributeName))
-        {
-            return null;
-        }
-
-        if (is_array($attribute = $this->getAllModelAttributes()[$attributeName]))
-        {
-            return $attribute;
-        }
-        else
-        {
-            return [
-                'type' => $attribute,
-            ];
-        }
-
-    }
-
-    /**
-     * Determine whether the given attribute should be a collection
-     *
-     * @param string $attributeName Attribute name
-     * @return bool|null
-     */
-    public function isModelAttributeCollectable($attributeName)
-    {
-        if (is_null($attribute = $this->getModelAttribute($attributeName)))
-        {
-            return null;
-        }
-
-        return in_array('collection', $attribute);
-    }
-
-    /**
-     * Check if given model attribute exists
-     *
-     * @param string $attributeName Attribute name
-     * @return bool
-     */
-    public function modelAttributeExists($attributeName)
-    {
-        return in_array($attributeName, array_keys($this->getAllModelAttributes()));
-    }
-
-    /**
-     * Return model attribute type by given name
-     *
-     * @param string $attributeName Attribute name
-     * @return string|null
-     */
-    public function getModelAttributeType($attributeName)
-    {
-        if (!$this->modelAttributeExists($attributeName))
-        {
-            return null;
-        }
-
-        return $this->getModelAttribute($attributeName)['type'];
-    }
-
-    /**
-     * Return all model attributes
-     *
-     * @param bool $includeShared Flag to include shared attributes
-     * @return array
-     */
-    public function getAllModelAttributes($includeShared = true)
-    {
-        if ($includeShared)
-        {
-            return array_merge($this->sharedAttributes, $this->modelAttributes);
-        }
-
-        return $this->modelAttributes;
-    }
 
     public function save()
     {
