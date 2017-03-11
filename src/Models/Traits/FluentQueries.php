@@ -31,12 +31,16 @@ trait FluentQueries {
 
     public function __call($name, $arguments)
     {
-        // TODO: Implement __call() method.
+        if (starts_with($name, ['where', 'orWhere']))
+        {
+            return $this->builder->$name(...$arguments);
+        }
     }
 
 
-    public function __callStatic($name, $arguments)
+    public static function __callStatic($name, $arguments)
     {
+
         if ($name == 'getAllModelAttributes')
         {
             $model = new static;
@@ -53,6 +57,14 @@ trait FluentQueries {
         {
             $model = new static;
             return $model->isModelAttributeChildClass(...$arguments);
+        }
+
+        if (starts_with($name, ['where', 'orWhere']))
+        {
+
+            $model = new static;
+
+            return $model->$name(...$arguments);
         }
 
         // TODO: Implement __callStatic() method.

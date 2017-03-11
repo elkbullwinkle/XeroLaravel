@@ -234,7 +234,7 @@ class QueryBuilder
             '!EndsWith' => ['string'],
         ];
 
-        if (!in_array($operator, $availableOperators))
+        if (!in_array($operator, array_keys($availableOperators)))
         {
             throw new AttributeValidationException("Operator ${operator} is not valid");
         }
@@ -258,6 +258,8 @@ class QueryBuilder
     {
         //Accommodating querying attributes using dot notation
 
+        var_dump($attribute,str_contains($attribute, '.'));
+
         if (str_contains($attribute, '.'))
         {
             $attributes = explode('.', $attribute);
@@ -280,7 +282,7 @@ class QueryBuilder
                 throw new AttributeValidationException("Attribute ${attributes[0]} not found on this model");
             }
 
-            if ($this->model->isModelAttributeChildClass($attributes[0], false))
+            if (!$this->model->isModelAttributeChildClass($attributes[0], false))
             {
                 throw new AttributeValidationException("Attribute must be a class and not a collection, when using dot notation");
             }

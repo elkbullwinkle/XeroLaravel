@@ -60,6 +60,9 @@ abstract class XeroModel extends Fluent implements Arrayable
     {
         $this->connection = resolve('XeroLaravel')->setModel($this);
 
+        $this->builder = new QueryBuilder($this, true);
+
+        return $this;
     }
 
     public function getLastError()
