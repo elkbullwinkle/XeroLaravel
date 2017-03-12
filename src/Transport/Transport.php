@@ -32,9 +32,10 @@ abstract class Transport {
      * @param $method
      * @param $url
      * @param array $data
+     * @param array $headers
      * @return mixed
      */
-    abstract function request($method, $url, $data = []);
+    abstract function request($method, $url, $data = [], $headers = []);
 
     final public function get($url, $data = [])
     {

@@ -104,32 +104,32 @@ class XeroLaravel {
         return $response['body'][$this->model->getEndpoint()];
     }
 
-    final public function get($guid = null, $data = [])
+    final public function get($guid = null, $data = [], $headers = [])
     {
         $url = $this->convertEndpointToUrl($guid);
 
-        return $this->processResponse($this->transport->request('get', $url, $data));
+        return $this->processResponse($this->transport->request('get', $url, $data, $headers));
     }
 
     final public function post($guid = null, $data = [])
     {
         $url = $this->convertEndpointToUrl($guid);
 
-        return $this->processResponse($this->transport->request('get', $url, $data));
+        return $this->processResponse($this->transport->request('post', $url, $data));
     }
 
     final public function put($guid = null, $data = [])
     {
         $url = $this->convertEndpointToUrl($guid);
 
-        return $this->processResponse($this->transport->request('get', $url, $data));
+        return $this->processResponse($this->transport->request('put', $url, $data));
     }
 
     final public function delete($guid = null, $data = [])
     {
         $url = $this->convertEndpointToUrl($guid);
 
-        return $this->processResponse($this->transport->request('get', $url, $data));
+        return $this->processResponse($this->transport->request('delete', $url, $data));
     }
 
     public function setModel(XeroModel &$model)

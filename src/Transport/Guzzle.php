@@ -72,22 +72,22 @@ class Guzzle extends Transport
      * @param $method
      * @param $url
      * @param array $data
+     * @param array $headers
      * @return mixed
      */
-    function request($method, $url, $data = [])
+    function request($method, $url, $data = [], $headers = [])
     {
 
         try {
 
-            $response = $this->client->request(strtoupper($method), $url, ['headers' => $this->headers]);
-
+            $response = $this->client
+                ->request(strtoupper($method), $url, [
+                    'headers' => array_merge($this->headers, $headers),
+                    'query' => $data,
+                    'debug' => true,
+                ]);
 
             return $this->processResponse($response);
-
-            echo \GuzzleHttp\Psr7\str($response);
-            var_dump($response);
-
-            return (string)$response->getBody();
 
         } catch (ClientException $e)
         {

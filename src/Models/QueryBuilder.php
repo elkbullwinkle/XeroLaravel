@@ -55,6 +55,13 @@ class QueryBuilder
      */
     protected $orderAttribute = null;
 
+    /**
+     * Modified after Carbon instance or null if not specified
+     *
+     * @var Carbon|null
+     */
+    protected $modifiedAfter = null;
+
     public function __construct(XeroModel &$model, $topLevel = false)
     {
         $this->model = &$model;
@@ -146,6 +153,52 @@ class QueryBuilder
         }
 
         return $this->where($attribute, $operator, $value, false);
+    }
+
+    public function orderBy($attribute, $descending = false)
+    {
+        //If this is executed from a closure we're just ignoring it
+        if (!$this->topLevel)
+        {
+            return $this;
+        }
+
+        $type = $this->validateAttribute($attribute);
+
+        if (is_bool($descending) === true)
+        {
+            $asc = !$descending;
+        }
+        else
+        {
+            $asc = !(strtolower($descending) == 'desc' || strtolower($descending) == 'descending');
+        }
+
+        $this->orderAttribute = [$attribute, $type, $asc];
+
+        return $this->model;
+
+    }
+
+    public function modifiedAfter($date)
+    {
+        //If this is a nested query we're just ignoring it and returning query builder instance
+        if (!$this->topLevel)
+        {
+            return $this;
+        }
+
+        if ($date instanceof Carbon)
+        {
+            $this->modifiedAfter = $date;
+        }
+
+        if (is_string($date))
+        {
+            $this->modifiedAfter = new Carbon($date);
+        }
+
+        return $this->model;
     }
 
     protected function processWhere($attribute, $operator = null, $value = null, $and = true)
@@ -303,15 +356,13 @@ class QueryBuilder
 
     }
 
-    protected function compileAttributeQuery($query, $noConjunction = false)
+    protected function compileAttributeQuery($query)
     {
         $attribute = $query[0];
         $type = $query[1];
         $operator = $query[2];
         $value = $query[3];
-        $conjunction = $noConjunction ? '' : $query[4] ? ' AND ' : ' OR ';
-
-        $expression = '';
+        //$conjunction = $noConjunction ? '' : $query[4] ? ' AND ' : ' OR ';
 
         //First prepare the value according to the type, assuming that it has already been sanitized
         switch ($type)
@@ -359,6 +410,11 @@ class QueryBuilder
 
         $isFirst = true;
 
+        if (empty($this->query))
+        {
+            return null;
+        }
+
         foreach ($this->query as $line)
         {
 
@@ -375,6 +431,10 @@ class QueryBuilder
             if ($line instanceof QueryBuilder)
             {
                 $chunk = $line->compile();
+
+                if (is_null($chunk)) {
+                    continue;
+                }
 
                 $and = $line->getConjunction();
             }
@@ -397,10 +457,37 @@ class QueryBuilder
             $output = "(${output})";
         }
 
-        var_dump($output);
-
         return $output;
 
+    }
+
+    public function compileOrderBy()
+    {
+        if (is_null($this->orderAttribute))
+        {
+            return null;
+        }
+
+        if (!$this->orderAttribute[2])
+        {
+            $sort = ' DESC';
+        }
+        else
+        {
+            $sort = '';
+        }
+
+        return $this->orderAttribute[0].$sort;
+    }
+
+    public function compileModifiedAfter()
+    {
+        if (is_null($this->modifiedAfter))
+        {
+            return null;
+        }
+
+        return $this->modifiedAfter->format('Y-m-d\TH:m:s');
     }
 
     /**

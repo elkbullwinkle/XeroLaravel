@@ -12,36 +12,27 @@ use Carbon\Carbon;
 use Elkbullwinkle\XeroLaravel\Exceptions\AttributeValidationException;
 use Elkbullwinkle\XeroLaravel\Models\Traits\Attributes;
 use Elkbullwinkle\XeroLaravel\Models\Traits\FluentQueries;
+use Elkbullwinkle\XeroLaravel\Models\Traits\Retrievable;
 use Elkbullwinkle\XeroLaravel\Models\Traits\ToArray;
 use Elkbullwinkle\XeroLaravel\Models\Traits\ToXml;
 use Elkbullwinkle\XeroLaravel\XeroLaravel;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Support\Collection;
-use ReflectionClass;
 use DOMDocument;
 
-abstract class XeroModel extends Fluent implements Arrayable
+abstract class XeroModel implements Arrayable
 {
-    use ToArray, ToXml, Attributes, FluentQueries;
-
-    protected $pageable = false;
-
-    protected $fetchable = true;
+    use ToArray,
+        ToXml,
+        Attributes,
+        Retrievable,
+        FluentQueries;
 
     protected $dependsOn = null;
 
     protected $overrideName = null;
 
     protected $parent = null;
-
-    /**
-     * @var XeroLaravel
-     */
-    protected $connection;
-
-    protected $config;
-
-
 
     protected $guid = null;
 
@@ -66,43 +57,10 @@ abstract class XeroModel extends Fluent implements Arrayable
         return $this;
     }
 
-    protected function setConnection($connection = 'default')
-    {
-        if ($this->connection instanceof XeroLaravel) {
-            unset($this->connection);
-        }
-
-        $this->config = $connection;
-
-        $this->connection = XeroLaravel::init($connection)
-            ->setModel($this);
-
-        return $this;
-    }
-
     public function getLastError()
     {
         return $this->lastError;
     }
-
-
-
-    /**
-     * @return XeroLaravel
-     */
-    public function getConnection()
-    {
-        return $this->connection;
-    }
-
-    /**
-     * @return bool
-     */
-    public function isPageable()
-    {
-        return $this->pageable;
-    }
-
 
     public static function createFromJson($json, $connection = 'default')
     {
