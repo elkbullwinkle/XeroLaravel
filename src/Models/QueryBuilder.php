@@ -51,6 +51,8 @@ class QueryBuilder
     public function __construct(XeroModel &$model, $topLevel = false)
     {
         $this->model = &$model;
+
+        $this->topLevel = $topLevel;
     }
 
     //What we need is to describe
@@ -82,6 +84,8 @@ class QueryBuilder
 
     protected function newQueryInstance()
     {
+        //$model = (new $this->model);
+
         return new static($this->model);
     }
 
@@ -109,7 +113,7 @@ class QueryBuilder
             $this->processWhere(...func_get_args());
         }
 
-        return $this->model;
+        return $this->topLevel ? $this->model : $this;
     }
 
     protected function compileAttributeQuery($query, $noConjunction = false)
@@ -221,11 +225,13 @@ class QueryBuilder
     {
         if ($operator == '!=') $operator = '==';
         if ($operator == '<=') $operator = '>=';
+        if ($operator == '<') $operator = '>';
 
 
         $availableOperators = [
             '==' => ['string', 'guid', 'date', 'net-date', 'boolean', 'float', 'int'],
-            '>=' => ['float', 'int'],
+            '>=' => ['float', 'int', 'date', 'net-date'],
+            '>' => ['float', 'int', 'date', 'net-date'],
             'Contains' => ['string'],
             'StartsWith' => ['string'],
             'EndsWith' => ['string'],
@@ -258,8 +264,6 @@ class QueryBuilder
     {
         //Accommodating querying attributes using dot notation
 
-        var_dump($attribute,str_contains($attribute, '.'));
-
         if (str_contains($attribute, '.'))
         {
             $attributes = explode('.', $attribute);
@@ -287,12 +291,12 @@ class QueryBuilder
                 throw new AttributeValidationException("Attribute must be a class and not a collection, when using dot notation");
             }
 
-            if (is_null($childModelAttribute = $modelAttribute['type']::getModelAttribute($attributes[1])))
+            if (is_null($childModelAttribute = $modelAttribute['type']::_getModelAttribute($attributes[1])))
             {
                 throw new AttributeValidationException("Attribute ${attributes[0]} not found on the child model");
             }
 
-            if ($modelAttribute['type']::isModelAttributeChildClass($attributes, null))
+            if ($modelAttribute['type']::_isModelAttributeChildClass($attributes, null))
             {
                 throw new AttributeValidationException("Child attribute must be a scalar property");
             }
@@ -303,7 +307,7 @@ class QueryBuilder
         {
             if (is_null($modelAttribute = $this->model->getModelAttribute($attribute)))
             {
-                throw new AttributeValidationException("Model attribute not found on this model");
+                throw new AttributeValidationException("Model attribute \"${attribute}\" not found on this model");
             }
 
             if ($this->model->isModelAttributeChildClass($attribute))
@@ -320,6 +324,16 @@ class QueryBuilder
 
     public function orWhere($attribute, $operator = null, $value = null)
     {
+        if (func_num_args() == 2)
+        {
+            $value = $operator;
+            $operator = '==';
+        }
+
+        if ($operator == '=') {
+            $operator = '==';
+        }
+
         return $this->where($attribute, $operator, $value, false);
     }
 
@@ -329,4 +343,6 @@ class QueryBuilder
     {
         return $this;
     }
+
+
 }

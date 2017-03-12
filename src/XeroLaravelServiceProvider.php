@@ -25,7 +25,11 @@ class XeroLaravelServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        $this->app->singleton('XeroLaravel', function ($app) {
+        /*$this->app->singleton('XeroLaravel', function ($app) {
+            return new XeroLaravel();
+        });*/
+
+        $this->app->bind('XeroLaravel', function ($app) {
             return new XeroLaravel();
         });
     }

@@ -41,19 +41,19 @@ trait FluentQueries {
     public static function __callStatic($name, $arguments)
     {
 
-        if ($name == 'getAllModelAttributes')
+        if ($name == '_getAllModelAttributes')
         {
             $model = new static;
             return $model->getAllModelAttributes();
         }
 
-        if ($name == 'getModelAttribute')
+        if ($name == '_getModelAttribute')
         {
             $model = new static;
             return $model->getModelAttribute($arguments[0]);
         }
 
-        if ($name == 'isModelAttributeChildClass')
+        if ($name == '_isModelAttributeChildClass')
         {
             $model = new static;
             return $model->isModelAttributeChildClass(...$arguments);
