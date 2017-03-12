@@ -39,6 +39,8 @@ abstract class XeroModel extends Fluent implements Arrayable
      */
     protected $connection;
 
+    protected $config;
+
 
 
     protected $guid = null;
@@ -47,20 +49,33 @@ abstract class XeroModel extends Fluent implements Arrayable
 
     protected $endpoint = '';
 
-
-
     public $lastError = [
         'code' => '',
         'error' => '',
     ];
 
 
-
-    public function __construct()
+    public function __construct($connection = 'default')
     {
-        $this->connection = resolve('XeroLaravel')->setModel($this);
+        var_dump('Init Xero Model');
+
+        $this->setConnection($connection);
 
         $this->builder = new QueryBuilder($this, true);
+
+        return $this;
+    }
+
+    protected function setConnection($connection = 'default')
+    {
+        if ($this->connection instanceof XeroLaravel) {
+            unset($this->connection);
+        }
+
+        $this->config = $connection;
+
+        $this->connection = XeroLaravel::init($connection)
+            ->setModel($this);
 
         return $this;
     }
@@ -89,11 +104,10 @@ abstract class XeroModel extends Fluent implements Arrayable
     }
 
 
-
-    public static function createFromJson($json)
+    public static function createFromJson($json, $connection = 'default')
     {
 
-        $model = new static;
+        $model = new static($connection);
 
         foreach ($json as $name => $attributeValue)
         {
@@ -130,9 +144,10 @@ abstract class XeroModel extends Fluent implements Arrayable
      * Build a collection of models using decoded JSON string
      *
      * @param array $json Decoded JSON string returned from Xero
+     * @param string $connection Set connection for the created model
      * @return Collection
      */
-    public static function createCollectionFromJson($json)
+    public static function createCollectionFromJson($json, $connection = 'default')
     {
         //Okay we need collection
 
@@ -140,11 +155,12 @@ abstract class XeroModel extends Fluent implements Arrayable
 
         foreach ($json as $model)
         {
-            $collection[] = static::createFromJson($model);
+            $collection[] = static::createFromJson($model, $connection);
         }
 
         return collect($collection);
     }
+
 
     protected function processAttribute($name, $value, $attribute)
     {
@@ -219,13 +235,13 @@ abstract class XeroModel extends Fluent implements Arrayable
             throw new \Exception('The child must be a subclass of XeroModel');
         }
 
-        return $class::createFromJson($attribute)
+        return $class::createFromJson($attribute, $this->config)
             ->setParent($this);
     }
 
     protected function processChildrenClasses($name, $attribute, $class)
     {
-        $collection =  $class::createCollectionFromJson($attribute);
+        $collection =  $class::createCollectionFromJson($attribute, $this->config);
 
         $collection->transform(function($item) {
             return $item->setParent($this);

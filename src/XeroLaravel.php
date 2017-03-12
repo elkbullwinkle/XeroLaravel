@@ -3,6 +3,7 @@
 namespace Elkbullwinkle\XeroLaravel;
 
 use Elkbullwinkle\XeroLaravel\Exceptions\ApplicationTypeNotAllowedException;
+use Elkbullwinkle\XeroLaravel\Exceptions\XeroLaravelConfigurationException;
 use Elkbullwinkle\XeroLaravel\Models\XeroModel;
 use Elkbullwinkle\XeroLaravel\Transport\Transport;
 use ReflectionClass;
@@ -28,6 +29,8 @@ class XeroLaravel {
 
     protected $config;
 
+    protected $configName = '';
+
     protected $lastError;
 
     protected $transport;
@@ -42,9 +45,24 @@ class XeroLaravel {
      */
     protected $app;
 
+    /**
+     * XeroLaravel constructor.
+     * @param string $config
+     * @throws ApplicationTypeNotAllowedException
+     * @throws XeroLaravelConfigurationException
+     */
     public function __construct($config = 'default')
     {
+        var_dump('Init Xero Laravel', $config);
+
+        $this->configName = $config;
+
         $this->config = config('xero-laravel.'.$config, []);
+
+        if (empty($this->config))
+        {
+            throw new XeroLaravelConfigurationException("Configuration entry \"${config}\" is not defined. Please check your config file");
+        }
 
         if (!in_array($this->config['type'], array_keys($this->appTypes)))
         {
@@ -58,6 +76,17 @@ class XeroLaravel {
         $this->transport = &$this->_transport;
 
         return $this;
+    }
+
+    /**
+     * Initialize XeroLaravel core
+     *
+     * @param string $config configuration matching config file
+     * @return XeroLaravel
+     */
+    public static function init($config = 'default')
+    {
+        return new static($config);
     }
 
     public function processResponse($response)

@@ -184,7 +184,7 @@ class Contact extends XeroModel
         ],
 
         'SalesTrackingCategories' => [
-            'type' => TrackingCategory::class,
+            'type' => ElementTracking::class,
             'post',
             'collection'
         ],

@@ -12,6 +12,11 @@ trait FluentQueries {
 
     //Builder variable
 
+    /**
+     * Query builder instance, initialized when the model is instantiated
+     *
+     * @var QueryBuilder
+     */
     protected $builder;
 
     /**
@@ -31,43 +36,53 @@ trait FluentQueries {
 
     public function __call($name, $arguments)
     {
-        if (starts_with($name, ['where', 'orWhere']))
-        {
-            return $this->builder->$name(...$arguments);
-        }
-    }
+        //Setting connection
 
+        switch ($name)
+        {
+            default:
+                if (starts_with($name, ['where', 'orWhere']))
+                {
+                    return $this->builder->$name(...$arguments);
+                }
+
+                return $this;
+
+            case 'setConnection':
+                return $this->setConnection(...$arguments);
+        }
+
+
+
+    }
 
     public static function __callStatic($name, $arguments)
     {
+        //Setting connection
 
-        if ($name == '_getAllModelAttributes')
+        switch ($name)
         {
-            $model = new static;
-            return $model->getAllModelAttributes();
+            default:
+                if (starts_with($name, ['where', 'orWhere']))
+                {
+                    return (new static)->$name(...$arguments);
+                }
+
+                return new static();
+
+            case 'setConnection':
+                return new static(...$arguments);
+
+            case '_getAllModelAttributes':
+                return (new static)->getAllModelAttributes($arguments[0]);
+
+            case '_getModelAttribute':
+                return (new static)->getModelAttribute($arguments[0]);
+
+            case '_isModelAttributeChildClass':
+                return (new static)->isModelAttributeChildClass(...$arguments);
         }
 
-        if ($name == '_getModelAttribute')
-        {
-            $model = new static;
-            return $model->getModelAttribute($arguments[0]);
-        }
-
-        if ($name == '_isModelAttributeChildClass')
-        {
-            $model = new static;
-            return $model->isModelAttributeChildClass(...$arguments);
-        }
-
-        if (starts_with($name, ['where', 'orWhere']))
-        {
-
-            $model = new static;
-
-            return $model->$name(...$arguments);
-        }
-
-        // TODO: Implement __callStatic() method.
     }
 
 }

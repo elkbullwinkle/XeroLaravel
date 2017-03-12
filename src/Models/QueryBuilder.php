@@ -48,6 +48,13 @@ class QueryBuilder
      */
     protected $query = [];
 
+    /**
+     * Order attribute
+     *
+     * @var string
+     */
+    protected $orderAttribute = null;
+
     public function __construct(XeroModel &$model, $topLevel = false)
     {
         $this->model = &$model;
@@ -80,12 +87,20 @@ class QueryBuilder
         $this->isAnd = $and;
     }
 
+    /**
+     * Get whether this is AND or OR query
+     *
+     * @return boolean
+     */
+    public function getConjunction()
+    {
+        return $this->isAnd;
+    }
+
     //New instance of Query to accommodate nested queries
 
     protected function newQueryInstance()
     {
-        //$model = (new $this->model);
-
         return new static($this->model);
     }
 
@@ -116,51 +131,21 @@ class QueryBuilder
         return $this->topLevel ? $this->model : $this;
     }
 
-    protected function compileAttributeQuery($query, $noConjunction = false)
+    //Or where function
+
+    public function orWhere($attribute, $operator = null, $value = null)
     {
-        $attribute = $query[0];
-        $type = $query[1];
-        $operator = $query[2];
-        $value = $query[3];
-        $conjunction = $noConjunction ? '' : $query[4] ? ' AND ' : ' OR ';
-
-        $expression = '';
-
-        //First prepare the value according to the type, assuming that it has already been sanitized
-        switch ($type)
+        if (func_num_args() == 2)
         {
-            case 'string':
-                $value = "\"${value}\"";
-                break;
-
-            case 'date':
-                $date = $value;
-                $value = sprintf('DateTime(%d,%d,%d)', $date->year, $date->month, $date->day);
-                break;
-
-            case 'guid':
-                $value = "Guid(\"${value}\")";
-                break;
+            $value = $operator;
+            $operator = '==';
         }
 
-        switch ($operator)
-        {
-            default:
-                $expression = "${attribute} ${operator} ${value}";
-                break;
-
-            case 'Contains':
-            case 'StartsWith':
-            case 'EndsWith':
-                $expression = "${attribute}.${operator}(${value})";
-                break;
-
-            case '!Contains':
-            case '!StartsWith':
-            case '!EndsWith':
-                $expression = "!${attribute}." . substr($operator,1) . "(${value})";
-                break;
+        if ($operator == '=') {
+            $operator = '==';
         }
+
+        return $this->where($attribute, $operator, $value, false);
     }
 
     protected function processWhere($attribute, $operator = null, $value = null, $and = true)
@@ -227,7 +212,6 @@ class QueryBuilder
         if ($operator == '<=') $operator = '>=';
         if ($operator == '<') $operator = '>';
 
-
         $availableOperators = [
             '==' => ['string', 'guid', 'date', 'net-date', 'boolean', 'float', 'int'],
             '>=' => ['float', 'int', 'date', 'net-date'],
@@ -249,7 +233,6 @@ class QueryBuilder
         {
             throw new AttributeValidationException("Can not use operator ${operator} with ${type} type");
         }
-
 
     }
 
@@ -320,29 +303,114 @@ class QueryBuilder
 
     }
 
-    //Or where function
-
-    public function orWhere($attribute, $operator = null, $value = null)
+    protected function compileAttributeQuery($query, $noConjunction = false)
     {
-        if (func_num_args() == 2)
+        $attribute = $query[0];
+        $type = $query[1];
+        $operator = $query[2];
+        $value = $query[3];
+        $conjunction = $noConjunction ? '' : $query[4] ? ' AND ' : ' OR ';
+
+        $expression = '';
+
+        //First prepare the value according to the type, assuming that it has already been sanitized
+        switch ($type)
         {
-            $value = $operator;
-            $operator = '==';
+            case 'string':
+                $value = "\"${value}\"";
+                break;
+
+            case 'date':
+                $date = $value;
+                $value = sprintf('DateTime(%d,%d,%d)', $date->year, $date->month, $date->day);
+                break;
+
+            case 'guid':
+                $value = "Guid(\"${value}\")";
+                break;
         }
 
-        if ($operator == '=') {
-            $operator = '==';
+        switch ($operator)
+        {
+            default:
+                $expression = "${attribute} ${operator} ${value}";
+                break;
+
+            case 'Contains':
+            case 'StartsWith':
+            case 'EndsWith':
+                $expression = "${attribute}.${operator}(${value})";
+                break;
+
+            case '!Contains':
+            case '!StartsWith':
+            case '!EndsWith':
+                $expression = "!${attribute}." . substr($operator,1) . "(${value})";
+                break;
         }
 
-        return $this->where($attribute, $operator, $value, false);
+        return $expression;
     }
 
-    //Page function
-
-    protected function retrievePage()
+    public function compile()
     {
-        return $this;
+        $output = '';
+
+
+        $isFirst = true;
+
+        foreach ($this->query as $line)
+        {
+
+            $chunk = '';
+
+            if (is_array($line))
+            {
+                $chunk = $this->compileAttributeQuery($line, true);
+
+                $and = $line[4];
+
+            }
+
+            if ($line instanceof QueryBuilder)
+            {
+                $chunk = $line->compile();
+
+                $and = $line->getConjunction();
+            }
+
+            if ($isFirst) {
+                $isFirst = false;
+            }
+            else
+            {
+                $chunk = ($and ? ' AND ' : ' OR ') . $chunk;
+            }
+
+            $output .= $chunk;
+        }
+
+        //If this is not a top level query builder we need to add parenthesis
+
+        if (!$this->topLevel)
+        {
+            $output = "(${output})";
+        }
+
+        var_dump($output);
+
+        return $output;
+
     }
 
+    /**
+     * Convert the query to string
+     *
+     * @return string
+     */
+    public function __toString()
+    {
+        return $this->compile();
+    }
 
 }

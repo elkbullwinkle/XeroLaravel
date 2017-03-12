@@ -59,7 +59,7 @@ abstract class Fluent
             return null;
         }
 
-        return static::createFromJson(reset($response));
+        return static::createFromJson(reset($response), $this->config);
     }
 
     public static function get($paginate = false)
