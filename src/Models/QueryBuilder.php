@@ -10,19 +10,12 @@ namespace Elkbullwinkle\XeroLaravel\Models;
 
 use Carbon\Carbon;
 use Elkbullwinkle\XeroLaravel\Exceptions\AttributeValidationException;
-use Elkbullwinkle\XeroLaravel\Models\Traits\ToArray;
-use Elkbullwinkle\XeroLaravel\Models\Traits\ToXml;
-use Elkbullwinkle\XeroLaravel\XeroLaravel;
-use Illuminate\Contracts\Support\Arrayable;
-use Illuminate\Support\Collection;
-use ReflectionClass;
-use DOMDocument;
 use Closure;
 
 class QueryBuilder
 {
     /**
-     * @var XeroModel
+     * @var Elkbullwinkle\XeroLaravel\Models\XeroModel
      */
     protected $model = null;
 

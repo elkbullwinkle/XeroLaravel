@@ -23,7 +23,19 @@ class XeroCollection extends Collection
     /**
      * @var XeroModel
      */
-    protected $class;
+    protected $model;
+
+    /**
+     * Determine whether model has been returned as paginated
+     *
+     * @var bool
+     */
+    protected $paginated = false;
+
+    /**
+     * @var int
+     */
+    protected $page = 1;
 
     /**
      * @var XeroModel
@@ -39,6 +51,29 @@ class XeroCollection extends Collection
     public function setParent(XeroModel &$model)
     {
         $this->parent = &$model;
+
+        return $this;
+    }
+
+    public function setModel(&$model)
+    {
+        $this->model = &$model;
+
+        return $this;
+    }
+
+    public function setPage(&$model)
+    {
+        $this->model = &$model;
+
+        return $this;
+    }
+
+    public function setPaginated($paginated)
+    {
+        $this->paginated = $paginated;
+
+        return $this;
     }
 
     /**
@@ -47,5 +82,15 @@ class XeroCollection extends Collection
     public function getParent()
     {
         return $this->parent;
+    }
+
+    public function fetchNextPage()
+    {
+        if (is_null($this->model))
+        {
+            return null;
+        }
+
+        return $this->model->retrieveModelCollection(true, $this->page + 1);
     }
 }

@@ -103,6 +103,8 @@ trait FluentQueries {
     public static function __callStatic($name, $arguments)
     {
 
+        $null = null;
+
         switch ($name)
         {
             default:
@@ -120,13 +122,13 @@ trait FluentQueries {
                 return new static(...$arguments);
 
             case '_getAllModelAttributes':
-                return (new static)->getAllModelAttributes(...$arguments);
+                return (new static($null))->getAllModelAttributes(...$arguments);
 
             case '_getModelAttribute':
-                return (new static)->getModelAttribute(...$arguments);
+                return (new static($null))->getModelAttribute(...$arguments);
 
             case '_isModelAttributeChildClass':
-                return (new static)->isModelAttributeChildClass(...$arguments);
+                return (new static($null))->isModelAttributeChildClass(...$arguments);
         }
 
     }

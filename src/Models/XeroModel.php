@@ -46,11 +46,12 @@ abstract class XeroModel implements Arrayable
     ];
 
 
-    public function __construct($connection = 'default')
+    public function __construct(&$connection = 'default')
     {
-        var_dump('Init Xero Model');
-
-        $this->setConnection($connection);
+        if (!is_null($connection))
+        {
+            $this->setConnection($connection);
+        }
 
         $this->builder = new QueryBuilder($this, true);
 
@@ -62,7 +63,7 @@ abstract class XeroModel implements Arrayable
         return $this->lastError;
     }
 
-    public static function createFromJson($json, $connection = 'default')
+    public static function createFromJson($json, &$connection = 'default')
     {
 
         $model = new static($connection);
@@ -105,7 +106,7 @@ abstract class XeroModel implements Arrayable
      * @param string $connection Set connection for the created model
      * @return Collection
      */
-    public static function createCollectionFromJson($json, $connection = 'default')
+    public static function createCollectionFromJson($json, &$connection = 'default')
     {
         //Okay we need collection
 
@@ -116,7 +117,15 @@ abstract class XeroModel implements Arrayable
             $collection[] = static::createFromJson($model, $connection);
         }
 
-        return collect($collection);
+        $collection = new XeroCollection($collection);
+
+        if ($connection instanceof XeroLaravel)
+        {
+            $model = $connection->getModel();
+            $collection->setModel($model);
+        }
+
+        return $collection;
     }
 
 
@@ -193,13 +202,13 @@ abstract class XeroModel implements Arrayable
             throw new \Exception('The child must be a subclass of XeroModel');
         }
 
-        return $class::createFromJson($attribute, $this->config)
+        return $class::createFromJson($attribute, $this->connection)
             ->setParent($this);
     }
 
     protected function processChildrenClasses($name, $attribute, $class)
     {
-        $collection =  $class::createCollectionFromJson($attribute, $this->config);
+        $collection =  $class::createCollectionFromJson($attribute, $this->connection);
 
         $collection->transform(function($item) {
             return $item->setParent($this);

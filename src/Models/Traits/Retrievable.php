@@ -51,16 +51,23 @@ trait Retrievable {
      * @param string $connection XeroLaravel configuration entry
      * @return $this
      */
-    protected function setConnection($connection = 'default')
+    protected function setConnection(&$connection = 'default')
     {
         if ($this->connection instanceof XeroLaravel) {
             unset($this->connection);
         }
 
-        $this->config = $connection;
+        if ($connection instanceof XeroLaravel)
+        {
+            $this->connection = &$connection;
+        }
+        else
+        {
+            $this->config = $connection;
 
-        $this->connection = XeroLaravel::init($connection)
-            ->setModel($this);
+            $this->connection = XeroLaravel::init($connection)
+                ->setModel($this);
+        }
 
         return $this;
     }
@@ -101,10 +108,10 @@ trait Retrievable {
             return null;
         }
 
-        return static::createFromJson(reset($response), $this->config);
+        return static::createFromJson(reset($response), $this->connection);
     }
 
-    public function retrieveModelCollection($paginate = false)
+    public function retrieveModelCollection($paginated = false, $page = 1)
     {
         $params = [];
         $headers = [];
@@ -123,6 +130,10 @@ trait Retrievable {
             $headers['If-Modified-Since'] = $query['modified'];
         }
 
+        if ($paginated) {
+            $params['page'] = $page;
+        }
+
         //dd($query, 'Getting model collection');
 
         $response = $this->connection->get(null, $params, $headers);
@@ -132,7 +143,11 @@ trait Retrievable {
             return collect();
         }
 
-        return static::createCollectionFromJson($response, $this->config);
+        $collection = static::createCollectionFromJson($response, $this->connection)
+            ->setPage($page)
+            ->setPaginated($paginated);
+
+        return $collection;
     }
 
     protected function prepareQuery()

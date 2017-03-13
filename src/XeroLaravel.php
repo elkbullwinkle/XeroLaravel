@@ -53,8 +53,6 @@ class XeroLaravel {
      */
     public function __construct($config = 'default')
     {
-        var_dump('Init Xero Laravel', $config);
-
         $this->configName = $config;
 
         $this->config = config('xero-laravel.'.$config, []);
@@ -91,6 +89,7 @@ class XeroLaravel {
 
     public function processResponse($response)
     {
+
         if (!$response['status'])
         {
             $this->lastError = [
@@ -132,6 +131,23 @@ class XeroLaravel {
         return $this->processResponse($this->transport->request('delete', $url, $data));
     }
 
+    /**
+     * Return the instance of associated model
+     *
+     * @return XeroModel
+     */
+    public function getModel()
+    {
+        return $this->model;
+    }
+
+    /**
+     * Set model for the current connection
+     *
+     *
+     * @param XeroModel $model
+     * @return $this
+     */
     public function setModel(XeroModel &$model)
     {
         $this->model = &$model;
