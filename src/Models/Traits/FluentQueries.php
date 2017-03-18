@@ -89,6 +89,9 @@ trait FluentQueries {
 
             case 'get':
                 return $this->retrieveModelCollection(...$arguments);
+
+            case 'all':
+                return $this->retrieveAllPaginated(...$arguments);
         }
 
     }
@@ -117,6 +120,9 @@ trait FluentQueries {
 
             case 'get':
                 return (new static)->retrieveModelCollection(...$arguments);
+
+            case 'all':
+                return (new static)->retrieveAllPaginated(...$arguments);
 
             case 'setConnection':
                 return new static(...$arguments);

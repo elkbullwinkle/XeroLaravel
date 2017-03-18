@@ -3,6 +3,7 @@
 namespace Elkbullwinkle\XeroLaravel\Models\Traits;
 
 use Carbon\Carbon;
+use Elkbullwinkle\XeroLaravel\Models\XeroCollection;
 use Elkbullwinkle\XeroLaravel\Models\XeroModel;
 use Illuminate\Support\Collection;
 
@@ -13,7 +14,7 @@ trait Attributes {
      *
      * @var array
      */
-    protected $attributes;
+    protected $attributes = [];
 
     /**
      * Describe model attributes
@@ -54,6 +55,13 @@ trait Attributes {
         'HasErrors' => 'boolean',
         'HasAttachments' => 'boolean',
     ];
+
+    /**
+     * Attributes that have been modified since the model is retrieved (created)
+     *
+     * @var array
+     */
+    protected $dirtyAttributes = [];
 
     /**
      * List of attributes which were pulled from Xero API during GET request, but weren't described in modelAttributes
@@ -181,6 +189,103 @@ trait Attributes {
         return $this->modelAttributes;
     }
 
+    /**
+     * Return all posted model attributes
+     *
+     * @param bool $includeShared Flag to include shared attributes
+     * @return array
+     */
+    public function getPostedAttributes($includeShared = true)
+    {
+        $modelAttributes = $this->modelAttributes;
+        $postedAttributes = [];
+
+        if ($includeShared)
+        {
+            $modelAttributes =  array_merge($this->sharedAttributes, $this->modelAttributes);
+        }
+
+        foreach ($modelAttributes as $name => $modelAttribute)
+        {
+            if (in_array('post', $modelAttribute))
+            {
+                $postedAttributes[] = $name;
+            }
+        }
+
+        return $postedAttributes;
+    }
+
+    /**
+     * Return the list of minimum set of required attributes to create a model
+     *
+     * @return array
+     */
+    public function getRequiredModelAttributes()
+    {
+        $modelAttributes = $this->getAllModelAttributes();
+        $requiredAttributes = [];
+
+
+        foreach ($modelAttributes as $name => $modelAttribute)
+        {
+            $modelAttribute = $this->getModelAttribute($name);
+
+            if (!array_diff(['post', 'required'], $modelAttribute))
+            {
+                $requiredAttributes[] = $name;
+            }
+        }
+
+        return $requiredAttributes;
+    }
+
+    public function getAttribute($name)
+    {
+        if (!($modelAttribute = $this->getModelAttribute($name)))
+        {
+            return null;
+        }
+
+
+        if (!isset($this->attributes[$name]))
+        {
+            //Checking for non scalar types and if not set, returning a new instance
+
+            if (is_a($modelAttribute['type'], XeroModel::class, true))
+            {
+                if ($this->isModelAttributeCollectable($name))
+                {
+                    $this->attributes[$name] = (new XeroCollection())
+                        ->setType($modelAttribute['type'])
+                        ->setModel($this)
+                        ->setParent($this);
+                }
+                else
+                {
+                    $this->attributes[$name] = (new $modelAttribute['type'](null))
+                        ->setParent($this);
+                }
+
+
+                $this->setDirty($name);
+                return $this->attributes[$name];
+            }
+
+            if (in_array($modelAttribute['type'], ['date', 'net-date']))
+            {
+                $this->attributes[$name] = new Carbon();
+                $this->setDirty($name);
+                return $this->attributes[$name];
+            }
+
+            return null;
+        }
+        else
+        {
+            return $this->attributes[$name];
+        }
+    }
 
     /**
      * Retrieve a model attribute
@@ -191,12 +296,9 @@ trait Attributes {
     public function __get($name)
     {
 
-        //Add some special attributes if needed
+        //TODO add some special attributes if needed
 
-        if (isset($this->attributes[$name]))
-        {
-            return $this->attributes[$name];
-        }
+        return $this->getAttribute($name);
     }
 
     /**
@@ -207,7 +309,14 @@ trait Attributes {
      */
     public function __set($name, $value)
     {
+        //TODO add attributes outside of model attributes if needed
 
+        $this->attributes[$name] = $this->saveAttribute($name, $value);
+
+        if(!is_null($this->parent))
+        {
+            //$this->parent->setDirty();
+        }
     }
 
 }

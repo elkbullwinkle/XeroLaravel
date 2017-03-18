@@ -2,6 +2,7 @@
 
 namespace Elkbullwinkle\XeroLaravel\Models\Traits;
 
+use Elkbullwinkle\XeroLaravel\Models\XeroCollection;
 use Elkbullwinkle\XeroLaravel\XeroLaravel;
 use Elkbullwinkle\XeroLaravel\Models\XeroModel;
 
@@ -54,7 +55,15 @@ trait Retrievable {
     protected function setConnection(&$connection = 'default')
     {
         if ($this->connection instanceof XeroLaravel) {
-            unset($this->connection);
+            $this->connection = null;
+        }
+
+        if(is_null($connection))
+        {
+            $this->config = 'default';
+            $this->connection = null;
+
+            return $this;
         }
 
         if ($connection instanceof XeroLaravel)
@@ -111,7 +120,29 @@ trait Retrievable {
         return static::createFromJson(reset($response), $this->connection);
     }
 
+    /**
+     * Retrieve XeroCollection from API
+     *
+     * @param bool $paginated
+     * @param int $page
+     * @return XeroCollection
+     */
     public function retrieveModelCollection($paginated = false, $page = 1)
+    {
+        return (new XeroCollection($this->retrieveModelArray($paginated, $page)))
+            ->setPaginated($paginated)
+            ->setPage($page)
+            ->setModel($this);
+    }
+
+    /**
+     * Retrieve array of XeroModels from API
+     *
+     * @param bool $paginated
+     * @param int $page
+     * @return array
+     */
+    public function retrieveModelArray($paginated = false, $page = 1)
     {
         $params = [];
         $headers = [];
@@ -140,19 +171,77 @@ trait Retrievable {
 
         if (!$response)
         {
-            return collect();
+            return null;
         }
 
-        $collection = static::createCollectionFromJson($response, $this->connection)
-            ->setPage($page)
-            ->setPaginated($paginated);
+        return static::createCollectionFromJson($response, $this->connection, true);
+    }
 
-        return $collection;
+    protected function retrieveAllPaginated()
+    {
+        if (!$this->pageable)
+        {
+            return $this->retrieveModelCollection(false);
+        }
+
+        $page = 1;
+
+        $params = [];
+        $headers = [];
+
+        $query = $this->prepareQuery();
+
+        if (!is_null($query['where'])) {
+            $params['where'] = $query['where'];
+        }
+
+        if (!is_null($query['order'])) {
+            $params['order'] = $query['order'];
+        }
+
+        if (!is_null($query['modified'])) {
+            $headers['If-Modified-Since'] = $query['modified'];
+        }
+
+        $output = [];
+
+        $hasErrors = false;
+
+        do {
+
+            $params['page'] = $page;
+
+            $response = $this->connection->get(null, $params, $headers);
+
+            if ($response === false)
+            {
+                $hasErrors = true;
+            }
+
+            if (($notEmptyResponse = (is_array($response) && !empty($response))))
+            {
+                $output = array_merge($output, $response);
+                $page += 1;
+            }
+        }
+        while (!$hasErrors && $notEmptyResponse);
+
+        if (!$hasErrors)
+        {
+            $collection = static::createCollectionFromJson($output, $this->connection, true);
+
+            return (new XeroCollection($collection))
+                ->setPaginated(true)
+                ->setPage($page - 1)
+                ->setModel($this);
+        }
+
+        return null;
     }
 
     protected function prepareQuery()
     {
-        $where = (string)$this->getBuilderInstance();
+        $where = $this->getBuilderInstance()->compile();
         $order = $this->getBuilderInstance()->compileOrderBy();
         $modified = $this->getBuilderInstance()->compileModifiedAfter();
 

@@ -11,15 +11,19 @@ use ReflectionClass;
 class XeroLaravel {
 
     /**
-     * Elkbullwinkle\XeroLaravel\XeroLaravel
+     * Supported application types
      *
-     * @property-read Transport $transport
+     * @var array
      */
-
     protected $appTypes = [
         'private' => PrivateApplication::class,
     ];
 
+    /**
+     * Supported API categories and their respective urls and versions
+     *
+     * @var array
+     */
     protected $cats = [
         'accounting' => [
             'name' => 'api.xro',
@@ -27,13 +31,56 @@ class XeroLaravel {
         ]
     ];
 
+    /**
+     * Api codes to reattempt the request
+     *
+     * @var array
+     */
+    protected $reattemptCodes = [
+        401, 500, 503, null
+    ];
+
+    /**
+     * Api request errors
+     *
+     * @var array
+     */
+    protected $requestErrors = [];
+
+    /**
+     * Configuration entry for the connection
+     *
+     * @var string
+     */
     protected $config;
 
+    /**
+     * Configuration entry name
+     *
+     * @var string
+     */
     protected $configName = '';
 
+    /**
+     * Last request error
+     *
+     * @var array
+     */
     protected $lastError;
 
+    /**
+     * Transport class instance
+     *
+     * @var mixed
+     */
     protected $transport;
+
+    /**
+     * Max number of attempts in case of failed request
+     *
+     * @var int
+     */
+    protected $maxAttempts = 5;
 
     /**
      * @var XeroModel
@@ -87,6 +134,12 @@ class XeroLaravel {
         return new static($config);
     }
 
+    /**
+     * Process response and log the error
+     *
+     * @param $response
+     * @return array|false
+     */
     public function processResponse($response)
     {
 
@@ -103,13 +156,54 @@ class XeroLaravel {
         return $response['body'][$this->model->getEndpoint()];
     }
 
+    /**
+     * Fire get request
+     *
+     * @param string $guid Guid or Number of the model
+     * @param array $data Form data attributes
+     * @param array $headers Extra headers
+     * @return array|false
+     */
     final public function get($guid = null, $data = [], $headers = [])
     {
         $url = $this->convertEndpointToUrl($guid);
 
-        return $this->processResponse($this->transport->request('get', $url, $data, $headers));
+        //Implementing attempts business
+        $attemptsLeft = $this->maxAttempts;
+
+        while($attemptsLeft > 0)
+        {
+            $response = $this->transport->request('get', $url, $data, $headers);
+
+            if (!$response['status'])
+            {
+                $this->requestErrors[] = [
+                    'code' => $response['code'],
+                    'headers' => $response['headers'],
+                    'body' => $response['body'],
+                ];
+
+                if (in_array($response['code'], $this->reattemptCodes))
+                {
+                    $attemptsLeft -= 1;
+                    continue;
+                }
+            }
+
+            break;
+
+        }
+
+        return $this->processResponse($response);
     }
 
+    /**
+     * Fire post request
+     *
+     * @param string $guid Guid or Number of the model
+     * @param array $data Form data attributes
+     * @return array|false
+     */
     final public function post($guid = null, $data = [])
     {
         $url = $this->convertEndpointToUrl($guid);
@@ -117,6 +211,13 @@ class XeroLaravel {
         return $this->processResponse($this->transport->request('post', $url, $data));
     }
 
+    /**
+     * Fire put request
+     *
+     * @param string $guid Guid or Number of the model
+     * @param array $data Form data attributes
+     * @return array|false
+     */
     final public function put($guid = null, $data = [])
     {
         $url = $this->convertEndpointToUrl($guid);
@@ -124,6 +225,13 @@ class XeroLaravel {
         return $this->processResponse($this->transport->request('put', $url, $data));
     }
 
+    /**
+     * Fire delete request
+     *
+     * @param string $guid Guid or Number of the model
+     * @param array $data Form data attributes
+     * @return array|false
+     */
     final public function delete($guid = null, $data = [])
     {
         $url = $this->convertEndpointToUrl($guid);
@@ -144,7 +252,6 @@ class XeroLaravel {
     /**
      * Set model for the current connection
      *
-     *
      * @param XeroModel $model
      * @return $this
      */
@@ -156,6 +263,8 @@ class XeroLaravel {
     }
 
     /**
+     * Return application instance
+     *
      * @return Application
      */
     public function getApp()
@@ -164,6 +273,12 @@ class XeroLaravel {
     }
 
 
+    /**
+     * Convert attached model endpoint to URL
+     *
+     * @param string $guid
+     * @return string
+     */
     public function convertEndpointToUrl($guid = null)
     {
         $baseUrl = $this->config['base_url'];
@@ -181,6 +296,12 @@ class XeroLaravel {
 
     }
 
+    /**
+     * Magic get
+     *
+     * @param $name
+     * @return mixed
+     */
     public function __get($name)
     {
         if ($name == '_transport')

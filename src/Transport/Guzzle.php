@@ -80,10 +80,19 @@ class Guzzle extends Transport
 
         try {
 
+            if (in_array($method, ['post', 'put']))
+            {
+                $dateType = 'form_params';
+            }
+            else
+            {
+                $dateType = 'query';
+            }
+
             $response = $this->client
                 ->request(strtoupper($method), $url, [
                     'headers' => array_merge($this->headers, $headers),
-                    'query' => $data,
+                    $dateType => $data,
                     'debug' => true,
                 ]);
 

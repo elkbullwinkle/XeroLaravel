@@ -48,7 +48,12 @@ trait ToXml {
         foreach ($this->attributes as $name => $attribute)
         {
 
-            if(!$this->getModelAttributeNeedsPosting($name, strtolower($action) == 'update'))
+            if(!$this->getModelAttributeNeedsPosting($name, true)) //is_null($parent) && strtolower($action) != 'update'))
+            {
+                continue;
+            }
+
+            if(strtolower($action) == 'update' && !$this->isDirty($name))
             {
                 continue;
             }
@@ -58,7 +63,7 @@ trait ToXml {
 
                 $childXml = $rootXml->addChild(str_singular($name));
 
-                $attribute->toXml($action, $childXml);
+                $attribute->toXml('create', $childXml);
 
             }
             elseif($attribute instanceof Carbon)
@@ -79,7 +84,7 @@ trait ToXml {
 
                     $childXml = $collection->addChild($childName);
 
-                    $item->toXml($action, $childXml);
+                    $item->toXml('create', $childXml);
                 });
             }
             elseif(is_array($attribute))

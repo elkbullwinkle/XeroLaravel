@@ -12,13 +12,13 @@ use Carbon\Carbon;
 use Elkbullwinkle\XeroLaravel\Exceptions\AttributeValidationException;
 use Elkbullwinkle\XeroLaravel\Models\Traits\Attributes;
 use Elkbullwinkle\XeroLaravel\Models\Traits\FluentQueries;
+use Elkbullwinkle\XeroLaravel\Models\Traits\Postable;
 use Elkbullwinkle\XeroLaravel\Models\Traits\Retrievable;
 use Elkbullwinkle\XeroLaravel\Models\Traits\ToArray;
 use Elkbullwinkle\XeroLaravel\Models\Traits\ToXml;
 use Elkbullwinkle\XeroLaravel\XeroLaravel;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Support\Collection;
-use DOMDocument;
 
 abstract class XeroModel implements Arrayable
 {
@@ -26,6 +26,7 @@ abstract class XeroModel implements Arrayable
         ToXml,
         Attributes,
         Retrievable,
+        Postable,
         FluentQueries;
 
     protected $dependsOn = null;
@@ -46,7 +47,7 @@ abstract class XeroModel implements Arrayable
     ];
 
 
-    public function __construct(&$connection = 'default')
+    public function __construct($connection = 'default')
     {
         if (!is_null($connection))
         {
@@ -63,10 +64,13 @@ abstract class XeroModel implements Arrayable
         return $this->lastError;
     }
 
-    public static function createFromJson($json, &$connection = 'default')
+    public static function createFromJson($json, $connection = 'default', XeroModel &$model = null)
     {
 
-        $model = new static($connection);
+        if (!is_a($model, static::class))
+        {
+            $model = new static($connection);
+        }
 
         foreach ($json as $name => $attributeValue)
         {
@@ -104,9 +108,10 @@ abstract class XeroModel implements Arrayable
      *
      * @param array $json Decoded JSON string returned from Xero
      * @param string $connection Set connection for the created model
+     * @param boolean $returnArray Whether should return array flag
      * @return Collection
      */
-    public static function createCollectionFromJson($json, &$connection = 'default')
+    public static function createCollectionFromJson($json, &$connection = 'default', $returnArray = false)
     {
         //Okay we need collection
 
@@ -115,6 +120,11 @@ abstract class XeroModel implements Arrayable
         foreach ($json as $model)
         {
             $collection[] = static::createFromJson($model, $connection);
+        }
+
+        if ($returnArray)
+        {
+            return $collection;
         }
 
         $collection = new XeroCollection($collection);
@@ -199,7 +209,7 @@ abstract class XeroModel implements Arrayable
 
         if (!is_a($class, XeroModel::class, true))
         {
-            throw new \Exception('The child must be a subclass of XeroModel');
+            throw new AttributeValidationException("${name} must be ${attribute['type']}");
         }
 
         return $class::createFromJson($attribute, $this->connection)
@@ -208,11 +218,11 @@ abstract class XeroModel implements Arrayable
 
     protected function processChildrenClasses($name, $attribute, $class)
     {
-        $collection =  $class::createCollectionFromJson($attribute, $this->connection);
+        $collection = $class::createCollectionFromJson($attribute, $this->connection);
 
         $collection->transform(function($item) {
             return $item->setParent($this);
-        });
+        })->setParent($this)->setType($class);
 
         return $collection;
     }
@@ -231,142 +241,6 @@ abstract class XeroModel implements Arrayable
         return Carbon::createFromTimestamp($time);
     }
 
-    public function isDirty()
-    {
-
-    }
-
-    public function canBeSaved()
-    {
-        return $this->fetchable;
-    }
-
-    public function validate()
-    {
-
-    }
-
-
-    protected function validateAttribute($name, $value)
-    {
-        if (in_array($name, array_keys($attrs = array_merge($this->sharedAttrs, $this->attrs))))
-        {
-            /*
-             * Possible types of attributes:
-             *
-             * String
-             * Float
-             * Int
-             * Boolean
-             * Array
-             * Carbon
-             * XeroModel descendant
-             * Collection of XeroModels
-             *
-             */
-
-            $isCollection = in_array($name, $this->collections);
-
-            if (is_array($attrs[$name]))
-            {
-                $type = $attrs[$name]['type'];
-
-                if (in_array('collection',$attrs['name']))
-                {
-                    $isCollection = true;
-                }
-            }
-            else
-            {
-                $type = $attrs[$name];
-            }
-
-
-            switch (strtolower($type))
-            {
-                default:
-
-                    //Check for collections
-
-                    if ($value instanceof Collection)
-                    {
-                        if ($value->isEmpty())
-                        {
-                            return $value;
-                        }
-
-                        else
-
-                        {
-                            //Need to validate that every element of collection has a correct type
-
-                            $filtered = $value->filter(function($value) use ($type) {
-                                return is_a($value, $type);
-                            });
-
-                            return $filtered;
-                        }
-                    }
-
-                    if (is_a($value, $type))
-                    {
-
-                    }
-
-                    break;
-
-                case 'string':
-                    return (string) $value;
-
-                case 'float':
-                    return floatval($value);
-
-                case 'int':
-                    return intval($value);
-
-                case 'boolean':
-                    return boolval($value);
-                case 'array':
-
-                    if (!is_array($value))
-                    {
-                        throw new AttributeValidationException("Attribute {$name} must be an array. " . gettype($value) . " given");
-                    }
-
-                    return $value;
-
-                case 'date':
-                case 'net-date':
-
-                    if (gettype($value) == 'string')
-                    {
-                        return new Carbon($value);
-                    }
-                    else
-                    {
-                        if ($value instanceof Carbon)
-                        {
-                            return $value;
-                        }
-                        else
-                        {
-                            throw new AttributeValidationException("Attribute {$name} must be an a Carbon instance or valid date-time string. " . gettype($value) . " given");
-                        }
-                    }
-            }
-        }
-    }
-
-
-
-    public function save()
-    {
-        $dom = new DOMDocument("1.0");
-        $dom->preserveWhiteSpace = false;
-        $dom->formatOutput = true;
-        $dom->loadXML($this->toXml());
-        echo $dom->saveXML();
-    }
 
     /**
      * Get API endpoint for the current model
