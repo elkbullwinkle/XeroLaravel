@@ -253,6 +253,17 @@ abstract class XeroModel implements Arrayable
         return $singular ? str_singular($this->endpoint) : $this->endpoint;
     }
 
+    /**
+     * Get current model endpoint
+     *
+     * @param bool $singular
+     * @return string
+     */
+    public static function endpoint($singular = false)
+    {
+        return (new static(null))->getEndpoint($singular);
+    }
+
     public function getCat()
     {
         return $this->cat;
