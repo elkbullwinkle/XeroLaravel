@@ -121,6 +121,8 @@ class CreditNote extends XeroModel
 
         'Total' => 'float',
 
+        'AppliedAmount' => 'float',
+
         'CurrencyCode' => [
             'type' => 'string',
             'post',

@@ -63,14 +63,14 @@ trait FluentQueries {
         switch ($name)
         {
             default:
-                if (starts_with($name, ['where', 'orWhere', 'orderBy', 'modifiedAfter']))
+                if (starts_with($name, ['where', 'orWhere', 'orderBy', 'modifiedAfter', 'includeArchived']))
                 {
-                    if (count($arguments) < 1)
+                    if ((count($arguments) < 1) && $name != 'includeArchived')
                     {
                         throw new AttributeValidationException('Not enough arguments supplied');
                     }
 
-                    if (!in_array($name, ['where', 'orWhere', 'orderBy', 'modifiedAfter']))
+                    if (!in_array($name, ['where', 'orWhere', 'orderBy', 'modifiedAfter', 'includeArchived']))
                     {
                         //$attribute = array_shift($arguments);
                         $attribute = $this->getAttributeFromWhereOrOrder($name);
@@ -111,7 +111,7 @@ trait FluentQueries {
         switch ($name)
         {
             default:
-                if (starts_with($name, ['where', 'orWhere', 'orderBy', 'modifiedAfter']))
+                if (starts_with($name, ['where', 'orWhere', 'orderBy', 'modifiedAfter', 'includeArchived']))
                 {
                     return (new static)->$name(...$arguments);
                 }

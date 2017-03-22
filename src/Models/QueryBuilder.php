@@ -55,6 +55,13 @@ class QueryBuilder
      */
     protected $modifiedAfter = null;
 
+    /**
+     * Include archived flag
+     *
+     * @var bool
+     */
+    protected $includeArchived = false;
+
     public function __construct(XeroModel &$model, $topLevel = false)
     {
         $this->model = &$model;
@@ -192,6 +199,29 @@ class QueryBuilder
         }
 
         return $this->model;
+    }
+
+    /**
+     * Include archived (this is so for to facilitate fetching Archived Contacts)
+     *
+     * @param bool $include
+     * @return $this
+     */
+    public function includeArchived($include = true)
+    {
+        $this->includeArchived = boolval($include);
+
+        return $this->model;
+    }
+
+    /**
+     * Flag should include archived items (Contacts so far)
+     *
+     * @return bool
+     */
+    public function shouldIncludeArchived()
+    {
+        return $this->includeArchived;
     }
 
     protected function processWhere($attribute, $operator = null, $value = null, $and = true)

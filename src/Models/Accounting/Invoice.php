@@ -161,12 +161,12 @@ class Invoice extends XeroModel
         ],
 
         'ExpectedPaymentDate' => [
-            'type' => 'boolean',
+            'type' => 'net-date',
             'post',
         ],
 
         'PlannedPaymentDate' => [
-            'type' => 'boolean',
+            'type' => 'net-date',
             'post',
         ],
 

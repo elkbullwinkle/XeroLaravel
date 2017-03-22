@@ -157,6 +157,10 @@ trait Retrievable {
             $params['order'] = $query['order'];
         }
 
+        if ($query['include_archived']) {
+            $params['includeArchived'] = 'true';
+        }
+
         if (!is_null($query['modified'])) {
             $headers['If-Modified-Since'] = $query['modified'];
         }
@@ -197,6 +201,10 @@ trait Retrievable {
 
         if (!is_null($query['order'])) {
             $params['order'] = $query['order'];
+        }
+
+        if ($query['include_archived']) {
+            $params['includeArchived'] = 'true';
         }
 
         if (!is_null($query['modified'])) {
@@ -244,11 +252,13 @@ trait Retrievable {
         $where = $this->getBuilderInstance()->compile();
         $order = $this->getBuilderInstance()->compileOrderBy();
         $modified = $this->getBuilderInstance()->compileModifiedAfter();
+        $includeArchived = $this->getBuilderInstance()->shouldIncludeArchived();
 
         return [
             'where' => !is_null($where) ? $where : null,
             'order' => !is_null($order) ? $order : null,
             'modified' => !is_null($modified) ? $modified : null,
+            'include_archived' => $includeArchived,
         ];
     }
 
