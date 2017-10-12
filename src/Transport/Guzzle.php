@@ -93,7 +93,7 @@ class Guzzle extends Transport
                 ->request(strtoupper($method), $url, [
                     'headers' => array_merge($this->headers, $headers),
                     $dateType => $data,
-                    'debug' => true,
+                    'debug' => false,
                 ]);
 
             return $this->processResponse($response);
